@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#define cache_size 32*1024
+
 int bar1(const char *fmt, ...);
 
 #if defined(__cplusplus)

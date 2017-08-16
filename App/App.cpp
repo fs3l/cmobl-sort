@@ -9,13 +9,14 @@
 #include "sgx_urts.h"
 //#include "sgx_status.h"
 #include "App.h"
+#include "../Enclave/Enclave.h"
 #include "Enclave_u.h"
 
-int ecall_foo1(int i)
+int ecall_foo1(long arr_data, long arr_perm, long arr_output, long n)
 {
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     int retval;
-    ret = ecall_foo(global_eid, &retval, i);
+    ret = ecall_foo(global_eid, &retval, arr_data, arr_perm, arr_output, n);
 
     if (ret != SGX_SUCCESS)
         abort();
@@ -215,6 +216,25 @@ void ocall_bar(const char *str, int ret[1])
     ret[0] = 13;
 }
 
+
+
+int32_t*
+util_copy_M_D_file(char * filename, int32_t n){
+//TOREMOVE
+int32_t* arr = new int32_t[n];
+for (int i = 0; i < n; i++) arr[i]=i; 
+return arr;
+//TODO 
+}
+
+void copy_M_D(int32_t** arr_data, int32_t** arr_perm, int32_t n){
+   * arr_data = util_copy_M_D_file("/home/hao/SampleCode/SampleEnclave/data_file/my.dat", n);
+   * arr_perm = util_copy_M_D_file("/home/hao/SampleCode/SampleEnclave/data_file/permutation", n);
+}
+
+void copy_D_M(int32_t* arr_output, int32_t n){
+}
+
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
 {
@@ -230,8 +250,18 @@ printf("b\n");
 printf("c\n");
     /* Utilize trusted libraries */
 int retval;
-    retval=ecall_foo1(i);
+
+int32_t n=(cache_size/4) * (cache_size/4);
+int32_t* arr_data;
+int32_t* arr_perm;
+int32_t* arr_output;
+
+    copy_M_D(&arr_data, &arr_perm, n);
+
+    retval=ecall_foo1((long)arr_data, (long)arr_perm, (long)arr_output, (long)n);
 printf("retval: %d\n", retval);
+
+    copy_D_M(arr_output, n);
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);

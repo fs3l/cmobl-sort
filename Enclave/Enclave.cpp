@@ -8,8 +8,6 @@
 #include "Enclave.h"
 #include "Enclave_t.h"  /* bar*/
 
-
-
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -26,20 +24,40 @@ int bar1(const char *fmt, ...)
     return ret[0];
 }
 
+void copy_E_M(int32_t* arr_data, int32_t* arr_perm, int32_t n){
+//TODO
+}
+void compute_CPU(int32_t* arr_data, int32_t* arr_perm, int32_t* arr_output, int32_t n){
+
+//copy_CPU_E(void)
+//copy_CPU_multiply(void)
+//copy_E_CPU(void)
+}
+void copy_M_E(int32_t* arr_output, int32_t n){
+}
+
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
  */
-int ecall_foo(int i)
+int ecall_foo(long arr_data_ref, long arr_perm_ref, long arr_output_ref, long n_ref)
 {
     void *ptr = malloc(100);
     assert(ptr != NULL);
     memset(ptr, 0x0, 100);
     free(ptr);
 
-int ret = bar1("calling ocall_bar with: %d\n", 23);
-bar1("ocall_bar returns: %d\n", ret);
+int32_t* arr_data = (int32_t*)arr_data_ref;
+int32_t* arr_perm = (int32_t*)arr_perm_ref;
+int32_t* arr_output = (int32_t*)arr_output_ref;
+int32_t n = (int32_t) n_ref;
 
-    return i+1;
+int ret = bar1("calling ocall_bar with: %d\n", arr_data[3]);
+
+copy_E_M(arr_data, arr_perm, n);
+compute_CPU(arr_data, arr_perm, arr_output, n);
+copy_M_E(arr_output, n);
+
+    return 0;
 }
 
 /* ecall_sgx_cpuid:
