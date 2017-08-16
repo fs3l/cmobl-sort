@@ -13,7 +13,7 @@ enclave {
         /*
          * Utilize malloc/free in enclave.
          */
-        public int ecall_foo(long arr_data, long arr_perm, long arr_output, long n);
+        public int ecall_foo(long arr_data, long arr_perm, long arr_output);
 
         /*
          * Utilize SGX version __cpuid() in enclave.

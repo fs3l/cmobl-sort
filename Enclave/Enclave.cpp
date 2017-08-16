@@ -24,22 +24,31 @@ int bar1(const char *fmt, ...)
     return ret[0];
 }
 
-void copy_E_M(int32_t* arr_data, int32_t* arr_perm, int32_t n){
-//TODO
+void copy_E_M(int32_t* arr_data, int32_t* arr_perm, 
+    int32_t* enclave_data,
+    int32_t* enclave_perm){
+  memcpy(enclave_data,arr_data,N*sizeof(int32_t));
+  memcpy(enclave_perm,arr_perm,N*sizeof(int32_t));
+  //TODO
 }
-void compute_CPU(int32_t* arr_data, int32_t* arr_perm, int32_t* arr_output, int32_t n){
+void compute_CPU(int32_t* arr_data, int32_t* arr_perm, int32_t* arr_output){
 
 //copy_CPU_E(void)
 //copy_CPU_multiply(void)
 //copy_E_CPU(void)
 }
-void copy_M_E(int32_t* arr_output, int32_t n){
+void copy_M_E(int32_t* enclave_output, int32_t* arr_output){
+  memcpy(arr_output,enclave_output,BLOWUPFACTOR*N*sizeof(int32_t));
 }
+
+int32_t enclave_data[N];
+int32_t enclave_perm[N];
+int32_t enclave_output[BLOWUPFACTOR*N];
 
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
  */
-int ecall_foo(long arr_data_ref, long arr_perm_ref, long arr_output_ref, long n_ref)
+int ecall_foo(long arr_data_ref, long arr_perm_ref, long arr_output_ref)
 {
     void *ptr = malloc(100);
     assert(ptr != NULL);
@@ -49,14 +58,15 @@ int ecall_foo(long arr_data_ref, long arr_perm_ref, long arr_output_ref, long n_
 int32_t* arr_data = (int32_t*)arr_data_ref;
 int32_t* arr_perm = (int32_t*)arr_perm_ref;
 int32_t* arr_output = (int32_t*)arr_output_ref;
-int32_t n = (int32_t) n_ref;
-
+    
 int ret = bar1("calling ocall_bar with: %d\n", arr_data[3]);
 
-copy_E_M(arr_data, arr_perm, n);
-compute_CPU(arr_data, arr_perm, arr_output, n);
-copy_M_E(arr_output, n);
-
+copy_E_M(arr_data, arr_perm, enclave_data, enclave_perm);
+bar1("calling ocall_bar with: %d\n", arr_data[3]);
+compute_CPU(enclave_data, enclave_perm, arr_output);
+bar1("calling ocall_bar with: %d\n", arr_data[3]);
+copy_M_E(enclave_output, arr_output);
+bar1("calling ocall_bar with: %d\n", arr_data[3]);
     return 0;
 }
 
