@@ -1,0 +1,49 @@
+# Compiled Object files
+*.slo
+*.lo
+*.ko
+*.o
+*.obj
+*.out
+*.dump
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.mod.c
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.out
+
+# other
+*.swp
+*.cmd
+tmp_versions/
+modules.order
+*.symvers
+
+app
+**/*_t.c
+**/*_t.h
+**/*_u.c
+**/*_u.h 
+
+.*
+!/.gitignore
