@@ -12,11 +12,11 @@
 #include "../Enclave/Enclave.h"
 #include "Enclave_u.h"
 
-int ecall_foo1(long arr_data, long arr_perm, long arr_output)
+int ecall_foo1(long host_data, long host_perm, long host_output)
 {
   sgx_status_t ret = SGX_ERROR_UNEXPECTED;
   int retval;
-  ret = ecall_foo(global_eid, &retval, arr_data, arr_perm, arr_output);
+  ret = ecall_foo(global_eid, &retval, host_data, host_perm, host_output);
 
   if (ret != SGX_SUCCESS)
     abort();
@@ -237,13 +237,13 @@ util_copy_D_M_file(int32_t* arr, char * filename){
 }
 
 
-  void copy_M_D(int32_t* arr_data, int32_t* arr_perm){
-    util_copy_M_D_file(arr_data, "/home/ju/workspace/sgxshuffle/data.dat");
-    util_copy_M_D_file(arr_perm, "/home/ju/workspace/sgxshuffle/perm.dat");
+  void copy_M_D(int32_t* host_data, int32_t* host_perm){
+    util_copy_M_D_file(host_data, "/home/ju/workspace/sgxshuffle/data.dat");
+    util_copy_M_D_file(host_perm, "/home/ju/workspace/sgxshuffle/perm.dat");
   }
 
-  void copy_D_M(int32_t* arr_output){
-    util_copy_D_M_file(arr_output, "/home/ju/workspace/sgxshuffle/output.dat");
+  void copy_D_M(int32_t* host_output){
+    util_copy_D_M_file(host_output, "/home/ju/workspace/sgxshuffle/output.dat");
   }
 
   /* Application entry */
@@ -262,16 +262,16 @@ util_copy_D_M_file(int32_t* arr, char * filename){
     /* Utilize trusted libraries */
     int retval;
 
-    int32_t* arr_data = new int32_t[N];
-    int32_t* arr_perm = new int32_t[N];
-    int32_t* arr_output = new int32_t[BLOWUPFACTOR*N];
+    int32_t* host_data = new int32_t[N];
+    int32_t* host_perm = new int32_t[N];
+    int32_t* host_output = new int32_t[BLOWUPFACTOR*N];
 
-    copy_M_D(arr_data, arr_perm);
+    copy_M_D(host_data, host_perm);
 
-    retval=ecall_foo1((long)arr_data, (long)arr_perm, (long)arr_output);
+    retval=ecall_foo1((long)host_data, (long)host_perm, (long)host_output);
     printf("retval: %d\n", retval);
 
-    copy_D_M(arr_output);
+    copy_D_M(host_output);
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);
