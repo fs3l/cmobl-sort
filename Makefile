@@ -5,10 +5,10 @@ SGX_SDK ?= /opt/intel/sgxsdk
 
 #clang-3.4
 
-CC = g++
+#CC = g++
 
 SGX_MODE ?= HW
-# SGX_PRELEASE ?= 1
+SGX_PRELEASE ?= 1
 
 ifneq ($(SGX_DEBUG), 1) 
 	SGX_PRERELEASE ?= 1

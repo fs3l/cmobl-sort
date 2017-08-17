@@ -2,24 +2,24 @@
 .type	asm_compute_CPU, @function
 asm_compute_CPU:
   #preload start
-  movq enc_data@GOTPCREL(%rip), %rax
+  movq E_data@GOTPCREL(%rip), %rax
   mov (%rax),%rcx
   mov 4(%rax),%rcx
   mov 8(%rax),%rcx
   mov 12(%rax),%rcx
-  movq enc_perm@GOTPCREL(%rip), %rax
+  movq E_perm@GOTPCREL(%rip), %rax
   mov (%rax),%rcx
   mov 4(%rax),%rcx
   mov 8(%rax),%rcx
   mov 12(%rax),%rcx
-  movq enc_output@GOTPCREL(%rip), %rax
+  movq E_output@GOTPCREL(%rip), %rax
   mov (%rax),%rcx
   mov 4(%rax),%rcx
   mov 8(%rax),%rcx
   mov 12(%rax),%rcx
-  movq enc_output@GOTPCREL(%rip), %rcx
-  movq enc_data@GOTPCREL(%rip), %rax
-  movq enc_perm@GOTPCREL(%rip), %rbx
+  movq E_output@GOTPCREL(%rip), %rcx
+  movq E_data@GOTPCREL(%rip), %rax
+  movq E_perm@GOTPCREL(%rip), %rbx
   #preload end
   xbegin ll
   movl (%rax),%esi
