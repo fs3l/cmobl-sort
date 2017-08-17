@@ -72,6 +72,10 @@ int ecall_foo(long host_data_ref, long host_perm_ref, long host_output_ref)
   enc_perm[1] = 1;
   enc_perm[2] = 0;
   enc_perm[3] = 2;
+  enc_output[0] = 0;
+  enc_output[1] = 0;
+  enc_output[2] = 0;
+  enc_output[3] = 0;
   compute_CPU(enc_data, enc_perm, enc_output);
   bar1("calling ocall_bar with: %d\n",enc_output[0]);
   bar1("calling ocall_bar with: %d\n",enc_output[1]);
