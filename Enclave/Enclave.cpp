@@ -27,8 +27,8 @@ int bar1(const char *fmt, ...)
 void copy_E_M(int32_t* M_data, int32_t* M_perm, 
     int32_t* E_data,
     int32_t* E_perm){
-  memcpy(E_data, M_data, N*sizeof(int32_t));
-  memcpy(E_perm, M_perm, N*sizeof(int32_t));
+  memcpy(E_data, M_data, M_N*sizeof(int32_t));
+  memcpy(E_perm, M_perm, M_N*sizeof(int32_t));
   //TODO
 }
 extern "C" {
@@ -41,12 +41,12 @@ void compute_CPU(int32_t* E_data, int32_t* E_perm, int32_t* E_output){
 }
 
 void copy_M_E(int32_t* E_output, int32_t* M_output){
-  memcpy(M_output,E_output,BLOWUPFACTOR*N*sizeof(int32_t));
+  memcpy(M_output,E_output,BLOWUPFACTOR * M_N * sizeof(int32_t));
 }
 
-int32_t E_data[N];
-int32_t E_perm[N];
-int32_t E_output[BLOWUPFACTOR*N];
+int32_t E_data[M_N];
+int32_t E_perm[M_N];
+int32_t E_output[BLOWUPFACTOR*M_N];
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
  */
