@@ -32,7 +32,7 @@ void copy_E_M(int32_t* M_data, int32_t* M_perm,
   //TODO
 }
 extern "C" {
-int asm_compute_CPU();
+  int asm_compute_CPU();
 }
 
 void compute_CPU(int32_t* E_data, int32_t* E_perm, int32_t* E_output){
@@ -72,6 +72,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
   E_perm[1] = 1;
   E_perm[2] = 0;
   E_perm[3] = 2;
+  //memset(E_output,0,BLOWUPFACTOR*M_N*sizeof(int32_t));
   E_output[0] = 0;
   E_output[1] = 0;
   E_output[2] = 0;

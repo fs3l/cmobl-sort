@@ -218,12 +218,12 @@ void ocall_bar(const char *str, int ret[1])
 
 void
 util_copy_M_D_file(int32_t* arr, char * filename, int32_t idx){
-/*  FILE *file; 
-  file=fopen(filename,"rb");
-  for(int z=0;z<D_N;z++)
-    fread(&arr[z],sizeof(int32_t),1,file);
-  fclose(file);
-*/
+  /*  FILE *file; 
+      file=fopen(filename,"rb");
+      for(int z=0;z<D_N;z++)
+      fread(&arr[z],sizeof(int32_t),1,file);
+      fclose(file);
+   */
   //Mel-MD
   FILE *file; 
   file=fopen(filename,"rb");
@@ -235,66 +235,66 @@ util_copy_M_D_file(int32_t* arr, char * filename, int32_t idx){
 
 void
 util_copy_D_M_file(int32_t* arr, char * filename, int32_t idx){
-/*
-  FILE *file; 
-  file=fopen(filename,"wb");
-  for(int z=0;z<D_N;z++)
-    fwrite(&arr[z],sizeof(int32_t),1,file);
-  fclose(file);
-*/
+  /*
+     FILE *file; 
+     file=fopen(filename,"wb");
+     for(int z=0;z<D_N;z++)
+     fwrite(&arr[z],sizeof(int32_t),1,file);
+     fclose(file);
+   */
   //mel-MD
   FILE *file; 
   file=fopen(filename,"wb");
   for(int ii=0;ii<M_N;ii++)
-    {
-      fseek(file,ii*M_N*BLOWUPFACTOR*sizeof(int32_t)+BLOWUPFACTOR*idx*sizeof(int32_t),0);
-      for(int i=0;i<BLOWUPFACTOR;i++)//max_elems=BLOWUP=CONST_P*log2N
-        fwrite(&arr[ii*M_N+i],sizeof(int32_t),1,file);
-    }
+  {
+    fseek(file,ii*M_N*BLOWUPFACTOR*sizeof(int32_t)+BLOWUPFACTOR*idx*sizeof(int32_t),0);
+    for(int i=0;i<BLOWUPFACTOR;i++)//max_elems=BLOWUP=CONST_P*log2N
+      fwrite(&arr[ii*M_N+i],sizeof(int32_t),1,file);
+  }
   fclose(file);
 }
 
 void copy_M_D(int32_t* M_data, int32_t* M_perm, int32_t idx){
-    util_copy_M_D_file(M_data, "/home/ju/workspace/sgxshuffle/data.dat", idx);
-    util_copy_M_D_file(M_perm, "/home/ju/workspace/sgxshuffle/perm.dat", idx);
+  util_copy_M_D_file(M_data, "/home/ju/workspace/sgxshuffle/data.dat", idx);
+  util_copy_M_D_file(M_perm, "/home/ju/workspace/sgxshuffle/perm.dat", idx);
 }
 
 void copy_D_M(int32_t* M_output, int32_t idx){
-    util_copy_D_M_file(M_output, "/home/ju/workspace/sgxshuffle/output.dat", idx);
+  util_copy_D_M_file(M_output, "/home/ju/workspace/sgxshuffle/output.dat", idx);
 }
 
-  /* Application entry */
-  int SGX_CDECL main(int argc, char *argv[])
-  {
-    int i = 3;
-    /* Initialize the enclave */
-    printf("a\n");
-    if(initialize_enclave() < 0){printf("Error enclave and exit\n");return -1;}
-    printf("b\n");
+/* Application entry */
+int SGX_CDECL main(int argc, char *argv[])
+{
+  int i = 3;
+  /* Initialize the enclave */
+  printf("a\n");
+  if(initialize_enclave() < 0){printf("Error enclave and exit\n");return -1;}
+  printf("b\n");
 
-    /* Utilize edger8r attributes */
-    edger8r_function_attributes();
+  /* Utilize edger8r attributes */
+  edger8r_function_attributes();
 
-    printf("c\n");
-    /* Utilize trusted libraries */
-    int retval;
+  printf("c\n");
+  /* Utilize trusted libraries */
+  int retval;
 
-    int32_t* M_data = new int32_t[M_N];
-    int32_t* M_perm = new int32_t[M_N];
-    int32_t* M_output = new int32_t[BLOWUPFACTOR*M_N];
+  int32_t* M_data = new int32_t[M_N];
+  int32_t* M_perm = new int32_t[M_N];
+  int32_t* M_output = new int32_t[BLOWUPFACTOR*M_N];
 
-for(int j = 0; j < M_N; j++){
+  for(int j = 0; j < M_N; j++){
     copy_M_D(M_data, M_perm, j);
 
     retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output);
     printf("retval: %d\n", retval);
-
-    copy_D_M(M_output, j);
-}
-
-    /* Destroy the enclave */
-    sgx_destroy_enclave(global_eid);
-    printf("Info: SampleEnclave successfully returned.\n");
-    return 0;
+    //TODO this call is buggy, FIXME
+    //    copy_D_M(M_output, j);
   }
+
+  /* Destroy the enclave */
+  sgx_destroy_enclave(global_eid);
+  printf("Info: SampleEnclave successfully returned.\n");
+  return 0;
+}
 

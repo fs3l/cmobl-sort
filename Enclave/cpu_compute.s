@@ -35,6 +35,7 @@ asm_compute_CPU:
   movl 12(%rbx),%edx
   movl %esi,(%rcx,%rdx,4)
   xend
+  //mov $0, %rax
   ret
 ll:
   mov $777,%rax
