@@ -38,7 +38,7 @@ extern "C" {
 void compute_CPU(int32_t* E_data, int32_t* E_perm, int32_t* E_output){
   int ret = asm_compute_CPU();
   if (!ret)
-      bar1("transacation aborted!!\n",ret);
+    bar1("transacation aborted!!\n",ret);
 }
 
 void copy_M_E(int32_t* E_output, int32_t* M_output){
@@ -53,11 +53,6 @@ int32_t E_output[BLOWUPFACTOR*M_N];
  */
 int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
 {
-  void *ptr = malloc(100);
-  assert(ptr != NULL);
-  memset(ptr, 0x0, 100);
-  free(ptr);
-
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
@@ -80,7 +75,8 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
   bar1("calling ocall_bar with: %d\n",E_output[2]);
   bar1("calling ocall_bar with: %d\n",E_output[3]);
   bar1("calling ocall_bar with: %d\n",E_output[4]);
-  copy_M_E(E_output, M_output);
+  //TODO FIXME 
+  // copy_M_E(E_output, M_output);
   return 0;
 }
 
