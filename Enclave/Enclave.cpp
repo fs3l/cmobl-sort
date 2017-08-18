@@ -53,6 +53,7 @@ int32_t E_output[BLOWUPFACTOR*M_N];
  */
 int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
 {
+  bar1("BLOWUPFACTOR=%d\n",BLOWUPFACTOR);
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
@@ -65,16 +66,13 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
   E_data[2] = 77;
   E_data[3] = 44;
   E_perm[0] = 12;
-  E_perm[1] = 4;
-  E_perm[2] = 0;
-  E_perm[3] = 8;
-  memset(E_output,0,BLOWUPFACTOR*M_N*sizeof(int32_t));
+  E_perm[1] = 13;
+  E_perm[2] = 14;
+  E_perm[3] = 15;
+  memset(E_output,-1,BLOWUPFACTOR*M_N*sizeof(int32_t));
   compute_CPU(E_data, E_perm, E_output);
-  bar1("calling ocall_bar with: %d\n",E_output[0]);
-  bar1("calling ocall_bar with: %d\n",E_output[1]);
-  bar1("calling ocall_bar with: %d\n",E_output[2]);
-  bar1("calling ocall_bar with: %d\n",E_output[3]);
-  bar1("calling ocall_bar with: %d\n",E_output[4]);
+  for(int i=0;i<32;i++)
+  bar1("calling ocall_bar with: %d\n",E_output[i]);
   //TODO FIXME 
   // copy_M_E(E_output, M_output);
   return 0;

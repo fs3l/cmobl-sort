@@ -19,7 +19,7 @@ extern "C" {
 #define CACHE_SIZE 32*1024
 #define D_N ((CACHE_SIZE/4) * (CACHE_SIZE/4)) 
 #define M_N (CACHE_SIZE/4)
-#define BLOWUPFACTOR NBITS(D_N) //TODO 
+#define BLOWUPFACTOR NBITS(D_N) //TODO blowupfactor = lg(D_N) ?
 //#define BLOWUPFACTOR 2*log(D_N)
 
 int bar1(const char *fmt, ...);
