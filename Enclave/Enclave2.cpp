@@ -36,6 +36,8 @@ extern "C" {
 
   int asm_compute_CPU();
   int asm_abort_handler();
+  void asm_tx_begin(int32_t* data, int32_t size);
+  void asm_tx_end();
   void tx_abort(int code){
     //TODO
     bar1("tx aborted=%d\n",code);
@@ -96,7 +98,7 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
   int32_t inter1[SqrtN*BLOWUPFACTOR];
   int32_t inter2[N*BLOWUPFACTOR];
   for (int j=0; j<SqrtN; j++){
-    tx_begin(inter1,SqrtN*BLOWUPFACTOR);
+    asm_tx_begin(inter1,SqrtN*BLOWUPFACTOR);
 
 /**
   int32_t inter1[SqrtN*BLOWUPFACTOR];
@@ -108,9 +110,9 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
 */
 //    for (int i=0;i<SqrtN;i++)
 //      inter1[E_perm[i]] = E_data[i];
-    tx_end();
+    asm_tx_end();
     //inter1 -> inter2
-    bar1("inter1=%d\n",inter1[SqrtN*BLOWUPFACTOR-1]);
+    //bar1("inter1=%d\n",inter1[SqrtN*BLOWUPFACTOR-1]);
     for (int i=0;i<SqrtN;i++)
        inter2[j*SqrtN*BLOWUPFACTOR+i]=inter1[i];
   }

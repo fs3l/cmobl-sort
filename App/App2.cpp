@@ -7,6 +7,8 @@
 # define MAX_PATH FILENAME_MAX
 
 #include "sgx_urts.h"
+# include <time.h>
+# include <sys/time.h>
 //#include "sgx_status.h"
 #include "App.h"
 #include "../Enclave/Enclave.h"
@@ -277,7 +279,12 @@ int SGX_CDECL main(int argc, char *argv[])
   int32_t* M_output = new int32_t[N];
 
   copy_M_D(M_data, M_perm);
+  struct timeval start,end;
+  gettimeofday(&start,NULL);
   retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output);
+  gettimeofday(&end,NULL);
+  printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec)
+        - (start.tv_sec * 1000000 + start.tv_usec)));
 //    printf("retval: %d\n", retval);
     //TODO this call is buggy, FIXME
     //    copy_D_M(M_output, j);

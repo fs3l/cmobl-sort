@@ -282,7 +282,8 @@ int SGX_CDECL main(int argc, char *argv[])
   int32_t* M_data = new int32_t[SqrtN];
   int32_t* M_perm = new int32_t[SqrtN];
   int32_t* M_output = new int32_t[BLOWUPFACTOR*SqrtN];
-
+  struct timeval start,end;
+  gettimeofday(&start,NULL);
   for(int j = 0; j < SqrtN; j++){
     copy_M_D(M_data, M_perm, j);
 
@@ -291,6 +292,9 @@ int SGX_CDECL main(int argc, char *argv[])
     //TODO this call is buggy, FIXME
     //    copy_D_M(M_output, j);
   }
+  gettimeofday(&end,NULL);
+  printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec)
+        - (start.tv_sec * 1000000 + start.tv_usec)));
 
   /* Destroy the enclave */
   sgx_destroy_enclave(global_eid);
