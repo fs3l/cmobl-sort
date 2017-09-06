@@ -220,15 +220,15 @@ void
 util_copy_M_D_file(int32_t* arr, char * filename, int32_t idx){
   /*  FILE *file; 
       file=fopen(filename,"rb");
-      for(int z=0;z<D_N;z++)
+      for(int z=0;z<N;z++)
       fread(&arr[z],sizeof(int32_t),1,file);
       fclose(file);
    */
   //Mel-MD
   FILE *file; 
   file=fopen(filename,"rb");
-  fseek(file,M_N*sizeof(int32_t)*idx,SEEK_SET);
-  for(int z=0;z<M_N;z++)
+  fseek(file,SqrtN*sizeof(int32_t)*idx,SEEK_SET);
+  for(int z=0;z<SqrtN;z++)
     fread(&arr[z],sizeof(int32_t),1,file);
   fclose(file);
 }
@@ -238,18 +238,18 @@ util_copy_D_M_file(int32_t* arr, char * filename, int32_t idx){
   /*
      FILE *file; 
      file=fopen(filename,"wb");
-     for(int z=0;z<D_N;z++)
+     for(int z=0;z<N;z++)
      fwrite(&arr[z],sizeof(int32_t),1,file);
      fclose(file);
    */
   //mel-MD
   FILE *file; 
   file=fopen(filename,"wb");
-  for(int ii=0;ii<M_N;ii++)
+  for(int ii=0;ii<SqrtN;ii++)
   {
-    fseek(file,ii*M_N*BLOWUPFACTOR*sizeof(int32_t)+BLOWUPFACTOR*idx*sizeof(int32_t),0);
+    fseek(file,ii*SqrtN*BLOWUPFACTOR*sizeof(int32_t)+BLOWUPFACTOR*idx*sizeof(int32_t),0);
     for(int i=0;i<BLOWUPFACTOR;i++)//max_elems=BLOWUP=CONST_P*log2N
-      fwrite(&arr[ii*M_N+i],sizeof(int32_t),1,file);
+      fwrite(&arr[ii*SqrtN+i],sizeof(int32_t),1,file);
   }
   fclose(file);
 }
@@ -279,15 +279,15 @@ int SGX_CDECL main(int argc, char *argv[])
   /* Utilize trusted libraries */
   int retval;
 
-  int32_t* M_data = new int32_t[M_N];
-  int32_t* M_perm = new int32_t[M_N];
-  int32_t* M_output = new int32_t[BLOWUPFACTOR*M_N];
+  int32_t* M_data = new int32_t[SqrtN];
+  int32_t* M_perm = new int32_t[SqrtN];
+  int32_t* M_output = new int32_t[BLOWUPFACTOR*SqrtN];
 
-  for(int j = 0; j < M_N; j++){
+  for(int j = 0; j < SqrtN; j++){
     copy_M_D(M_data, M_perm, j);
 
     retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output);
-    printf("retval: %d\n", retval);
+//    printf("retval: %d\n", retval);
     //TODO this call is buggy, FIXME
     //    copy_D_M(M_output, j);
   }

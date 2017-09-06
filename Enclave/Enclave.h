@@ -16,11 +16,13 @@ extern "C" {
 #define NBITS32(n) ((n&0xFFFF0000)?(16+NBITS16(n>>16)):(NBITS16(n)))
 #define NBITS(n) (n==0?0:NBITS32(n))
 
-#define CACHE_SIZE 32*1024
-#define D_N ((CACHE_SIZE/4) * (CACHE_SIZE/4)) 
-#define M_N (CACHE_SIZE/4)
-#define BLOWUPFACTOR NBITS(D_N) //TODO blowupfactor = lg(D_N) ?
-//#define BLOWUPFACTOR 2*log(D_N)
+//#define CACHE_SIZE 32*1024
+//#define SqrtN (CACHE_SIZE/4)
+//TOREMOVE
+#define SqrtN 128
+#define N SqrtN*SqrtN
+#define BLOWUPFACTOR NBITS(N) //TODO blowupfactor = lg(N) ?
+//#define BLOWUPFACTOR 2*log(N)
 
 int bar1(const char *fmt, ...);
 
