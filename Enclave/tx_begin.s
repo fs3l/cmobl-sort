@@ -5,7 +5,6 @@ asm_tx_begin:
 #  pushq	%rbp
 #  movq	%rsp, %rbp
   movl %esi, %r8d
-  addl %edx,%r8d
   mov $0, %eax
   mov %rdi, %rcx
 loop1:
@@ -16,7 +15,7 @@ loop1:
   add    $4, %rcx
   jmp    loop1
 endloop1:
-  xbegin asm_abort_handler
+ xbegin asm_abort_handler
   mov %rdi,%rcx
   mov $0, %eax
 loop:
@@ -45,11 +44,12 @@ loop2:
   sall $2,%r11d     #r11 = r11 *4
   mov %rdi,%rcx  #rcx = inter1
   add  %r11,%rcx    #rcx is now output[permu[i]]
-  movl %r10d,(%rcx) #assign value
+#  movl %r10d,(%rcx) #assign value
   addl $1,%eax  #increment
   add $4,%r8   #increment
   add $4,%r9  #increment
   jmp loop2
 endloop2:
 #popq %rbp
+  xend
   ret

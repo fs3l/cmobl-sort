@@ -102,7 +102,8 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
   for (int i=0;i<SqrtN;i++)
       E_data_prime[i] = i;
   for (int i=0;i<SqrtN;i++)
-      E_perm_prime[i] = SqrtN-1-i;
+      //E_perm_prime[i] = SqrtN-1-i;
+      E_perm_prime[i] = i;//SqrtN-1-i;
 //  for (int i=0;i<SqrtN*BLOWUPFACTOR+2*SqrtN;i++)
 //      bar1("@%d=%d\n",i,inter1[i]);
   inter1[0]=777;
@@ -120,7 +121,7 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
 */
     //for (int i=0;i<SqrtN;i++)
       //inter1[E_perm_prime[i]] = E_data_prime[i];
-    asm_tx_end();
+    //asm_tx_end();
     //inter1 -> inter2
     //bar1("inter1=%d\n",inter1[SqrtN*BLOWUPFACTOR-1]);
   for (int i=0;i<SqrtN*BLOWUPFACTOR+2*SqrtN;i++)
