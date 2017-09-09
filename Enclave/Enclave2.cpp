@@ -36,11 +36,11 @@ extern "C" {
 
   int asm_compute_CPU();
   int asm_abort_handler();
-  void asm_tx_begin(int32_t* data, int32_t size);
+  int asm_tx_begin(int32_t* data, int32_t size1, int32_t size2);
   void asm_tx_end();
   void tx_abort(int code){
     //TODO
-    bar1("tx aborted=%d\n",code);
+    bar1("tx aborted reason=%d\n",code);
   }
 
 static 
@@ -95,10 +95,20 @@ inline void tx_end() {
 
 void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output){
   bar1("BLOWUPFACTOR=%d\n",BLOWUPFACTOR);
-  int32_t inter1[SqrtN*BLOWUPFACTOR];
+  int32_t inter1[SqrtN*BLOWUPFACTOR+SqrtN+SqrtN];
   int32_t inter2[N*BLOWUPFACTOR];
+  int32_t* E_data_prime = &inter1[SqrtN*BLOWUPFACTOR];
+  int32_t* E_perm_prime = &inter1[SqrtN*BLOWUPFACTOR+SqrtN];
+  for (int i=0;i<SqrtN;i++)
+      E_data_prime[i] = i;
+  for (int i=0;i<SqrtN;i++)
+      E_perm_prime[i] = SqrtN-1-i;
+//  for (int i=0;i<SqrtN*BLOWUPFACTOR+2*SqrtN;i++)
+//      bar1("@%d=%d\n",i,inter1[i]);
+  inter1[0]=777;
   for (int j=0; j<SqrtN; j++){
-    asm_tx_begin(inter1,SqrtN*BLOWUPFACTOR);
+    int ret = asm_tx_begin(inter1,SqrtN*BLOWUPFACTOR,SqrtN);
+    bar1("ret=%d\n",ret);
 
 /**
   int32_t inter1[SqrtN*BLOWUPFACTOR];
@@ -108,13 +118,13 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
   for (int j=0; j<SqrtN; j++){
     tx_begin2(data, sizes, 1);
 */
-//    for (int i=0;i<SqrtN;i++)
-//      inter1[E_perm[i]] = E_data[i];
+    //for (int i=0;i<SqrtN;i++)
+      //inter1[E_perm_prime[i]] = E_data_prime[i];
     asm_tx_end();
     //inter1 -> inter2
     //bar1("inter1=%d\n",inter1[SqrtN*BLOWUPFACTOR-1]);
-    for (int i=0;i<SqrtN;i++)
-       inter2[j*SqrtN*BLOWUPFACTOR+i]=inter1[i];
+  for (int i=0;i<SqrtN*BLOWUPFACTOR+2*SqrtN;i++)
+      bar1("@%d=%d\n",i,inter1[i]);
   }
   return;
 }
