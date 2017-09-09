@@ -13,7 +13,8 @@
 #include "App.h"
 #include "../Enclave/Enclave.h"
 #include "Enclave_u.h"
-
+#include <pthread.h>
+#include <sched.h>
 int ecall_foo1(long M_data, long M_perm, long M_output)
 {
   sgx_status_t ret = SGX_ERROR_UNEXPECTED;
@@ -279,6 +280,9 @@ int SGX_CDECL main(int argc, char *argv[])
   int32_t* M_output = new int32_t[N];
 
   copy_M_D(M_data, M_perm);
+  struct sched_param param;
+  param.sched_priority = 0;
+  sched_setscheduler(0,SCHED_FIFO,&param);
   struct timeval start,end;
   gettimeofday(&start,NULL);
   retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output);

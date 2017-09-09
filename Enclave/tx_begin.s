@@ -16,40 +16,40 @@ loop1:
   jmp    loop1
 endloop1:
  xbegin asm_abort_handler
-  mov %rdi,%rcx
-  mov $0, %eax
-loop:
-  cmpl  %r8d,%eax
-  jge    endloop
-  movl   $5, (%rcx)
-  addl   $1, %eax
-  add   $4, %rcx
-  jmp    loop
-endloop:
+#  mov %rdi,%rcx
+#  mov $0, %eax
+#loop:
+#  cmpl  %r8d,%eax
+#  jge    endloop
+#  movl   $5, (%rcx)
+#  addl   $1, %eax
+#  add   $4, %rcx
+#  jmp    loop
+#endloop:
 #start permutation
-  mov %rdi,%r8  #r8 = inter1
-  mov %rsi,%r12 # r12 = size1
-  sall $2,%r12d  # r12=4*size1
-  add %r12,%r8   #r8 is data
-  mov %r8,%r9    # r9 = data
-  mov %rdx,%r12  #r12 = size2
-  sall $2,%r12d  #r12=r12*4
-  add %r12,%r9  #r9 is now permu
-  mov $0,%eax  #eax = 0
-loop2:
-  cmpl %edx,%eax
-  jge endloop2
-  movl (%r8),%r10d  #data[i] -> r10
-  movl (%r9),%r11d  #permu[i] -> r11
-  sall $2,%r11d     #r11 = r11 *4
-  mov %rdi,%rcx  #rcx = inter1
-  add  %r11,%rcx    #rcx is now output[permu[i]]
+#  mov %rdi,%r8  #r8 = inter1
+#  mov %rsi,%r12 # r12 = size1
+#  sall $2,%r12d  # r12=4*size1
+#  add %r12,%r8   #r8 is data
+#  mov %r8,%r9    # r9 = data
+#  mov %rdx,%r12  #r12 = size2
+#  sall $2,%r12d  #r12=r12*4
+#  add %r12,%r9  #r9 is now permu
+#  mov $0,%eax  #eax = 0
+#loop2:
+#  cmpl %edx,%eax
+#  jge endloop2
+#  movl (%r8),%r10d  #data[i] -> r10
+#  movl (%r9),%r11d  #permu[i] -> r11
+#  sall $2,%r11d     #r11 = r11 *4
+#  mov %rdi,%rcx  #rcx = inter1
+#  add  %r11,%rcx    #rcx is now output[permu[i]]
 #  movl %r10d,(%rcx) #assign value
-  addl $1,%eax  #increment
-  add $4,%r8   #increment
-  add $4,%r9  #increment
-  jmp loop2
-endloop2:
+#  addl $1,%eax  #increment
+#  add $4,%r8   #increment
+#  add $4,%r9  #increment
+#  jmp loop2
+#endloop2:
 #popq %rbp
   xend
   ret

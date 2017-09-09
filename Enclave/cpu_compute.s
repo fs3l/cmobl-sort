@@ -32,7 +32,7 @@ asm_compute_CPU:
   movq E_perm@GOTPCREL(%rip), %rbx
   sub $16,%rsp
   #preload end
-  xbegin ll
+  #xbegin ll
   movl (%rax),%esi  #esi = data[0]
   movl (%rbx),%edi  #edx = perm[0]
   sarl $2,%edi      #edx=edx/4
