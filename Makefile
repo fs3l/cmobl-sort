@@ -43,7 +43,7 @@ endif
 ifeq ($(SGX_DEBUG), 1)
         SGX_COMMON_CFLAGS += -O0 -g
 else
-        SGX_COMMON_CFLAGS += -O0
+        SGX_COMMON_CFLAGS += -O0 -g
 endif
 
 ######## App Settings ########
@@ -54,7 +54,7 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-App_Cpp_Files := App/App2.cpp $(wildcard App/Edger8rSyntax/*.cpp)
+App_Cpp_Files := App/App_baseline.cpp $(wildcard App/Edger8rSyntax/*.cpp)
 App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include
 
 App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
@@ -96,7 +96,7 @@ else
 	Crypto_Library_Name := sgx_tcrypto
 endif
 
-Enclave_Cpp_Files := Enclave/Enclave2.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
+Enclave_Cpp_Files := Enclave/Enclave_baseline.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
 Enclave_Asm_Files := Enclave/cpu_compute.s Enclave/abort_handling.s Enclave/tx_begin.s Enclave/tx_end.s
 Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport
 
