@@ -37,10 +37,14 @@ extern "C" {
   int asm_compute_CPU();
   //int _abort_handler();
   int asm_tx_begin(int32_t* data, int32_t size1, int32_t size2);
+  int asm_cache_hit_simulate(int32_t* data, int32_t size1);
+  int asm_cache_miss_simulate(int32_t* data,int32_t size1);
   void asm_tx_end();
   void tx_abort(int code){
     //TODO
-    bar1("tx aborted reason=%d\n",code);
+    static int i=0;
+    i++;
+    bar1("tx aborted count=%d\n",i);
   }
 
 /*
@@ -108,9 +112,11 @@ void compute_CPU3_distribute(int32_t* E_data, int32_t* E_perm, int32_t* E_output
       E_perm_prime[i] = i;//SqrtN-1-i;
 //  for (int i=0;i<SqrtN*BLOWUPFACTOR+2*SqrtN;i++)
 //      bar1("@%d=%d\n",i,inter1[i]);
-  for (int j=0; j<SqrtN; j++){
+  for (int j=0; j<1000000; j++){
+    
+   // int tmp[1000];// = new int[1000];
+   // asm_cache_miss_simulate(tmp,1000);
     int ret = asm_tx_begin(inter1,SqrtN*BLOWUPFACTOR,SqrtN);
-
 /**
   int32_t inter1[SqrtN*BLOWUPFACTOR];
   int32_t inter2[N*BLOWUPFACTOR];
