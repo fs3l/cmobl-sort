@@ -33,6 +33,9 @@ void copy_E_M(int32_t* M_data, int32_t* M_perm,
 }
 
 extern "C" {
+
+  int asm_compute_CPU();
+  //int _abort_handler();
   int asm_apptx_distribute(int32_t* data, int32_t size1, int32_t size2);
   int asm_cache_hit_simulate(int32_t* data, int32_t size1);
   int asm_cache_miss_simulate(int32_t* data,int32_t size1);
@@ -51,6 +54,52 @@ static inline
     i++;
     bar1("tx aborted count=%d\n",i);
   }
+
+/*
+static 
+inline void tx_begin2(int32_t** data, int32_t* sizes, int32_t size) {
+  bar1("xbegin, %p,%d\n",data,size);
+  for (int j=0;j<size;j++){
+    for (int i = 0; i < sizes[j]; i++)
+      data[j][i]=(data[j][i] + 1) - 1;//TODO check dirty lines?
+  }
+  __asm__("xbegin _abort_handler");
+  for (int j=0;j<size;j++){
+    for (int i = 0; i < sizes[j]; i++)
+      data[j][i]=(data[j][i] + 1) - 1;//TODO check dirty lines?
+  }
+}
+*/
+/*
+static 
+inline void tx_begin(int32_t* data, int32_t size) {
+  //for (int j=0;j<size;j++)
+    //  data[j]=5;//data[j]+1-1; //TODO check if causing dirty lines?
+asm volatile("mov %0, %%edx\n\t"
+        "mov $0, %%eax\n\t"
+        "mov %1, %%rbx\n\t"
+        "mov %%rbx,%%rcx\n\t"
+        "loop1:cmpl  %%edx,%%eax\n\t"
+        "jge    endloop1\n\t"
+        "movl   $5, (%%rcx)\n\t"
+        "addl   $1, %%eax\n\t"
+        "add   $4, %%rcx\n\t"
+        "jmp    loop1\n\t"
+        "endloop1:\n\t"
+        "xbegin _abort_handler\n\t"
+        "mov %%rbx,%%rcx\n\t"
+        "loop:cmpl  %%edx,%%eax\n\t"
+        "jge    endloop\n\t"
+        "movl   $5, (%%rcx)\n\t"
+        "addl   $1, %%eax\n\t"
+        "add   $4, %%rcx\n\t"
+        "jmp    loop\n\t"
+        "endloop:\n\t"
+        :
+        :"r"(size),"r"(data)
+        :"rcx","eax","edx");
+}
+*/
 }
 
 void applogic_distribute(int32_t* inter1, int32_t size){
@@ -60,6 +109,13 @@ void applogic_distribute(int32_t* inter1, int32_t size){
   return;
 }
 
+void compute_CPU(int32_t* E_data, int32_t* E_perm, int32_t* E_output){
+  int ret = asm_compute_CPU();
+  if (ret){
+    bar1("transacation aborted!!\n",ret);
+  }
+}
+
 void copy_M_E(int32_t* E_output, int32_t* M_output){
   memcpy(M_output,E_output,N * sizeof(int32_t));
 }
@@ -67,6 +123,7 @@ void copy_M_E(int32_t* E_output, int32_t* M_output){
 int32_t E_data[N];
 int32_t E_perm[N];
 int32_t E_output[N];
+
 
 int32_t*
 mem_alloc(int32_t * M_data, int32_t * M_perm, int32_t i){

@@ -10,7 +10,7 @@ SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= HW
 SGX_PRELEASE ?= 0
 SGX_DEBUG ?= 1
-MEL_BASELINE ?= 1
+MEL_BASELINE ?= 0
 
 ifneq ($(SGX_DEBUG), 1) 
 	SGX_PRERELEASE ?= 1

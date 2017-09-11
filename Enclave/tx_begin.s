@@ -1,9 +1,11 @@
-.globl	asm_tx_begin
-.type	asm_tx_begin, @function
-asm_tx_begin:
+.globl	asm_apptx_distribute
+.type	asm_apptx_distribute, @function
+asm_apptx_distribute:
 # rdi=inter1,rsi=sqrtN*blowupfactor and rdx=sqrtN
 #  pushq	%rbp
 # movq	%rsp, %rbp
+
+##1. txbegin
 #prefetch external
   movl %esi, %r8d
   mov $0, %eax
@@ -29,7 +31,8 @@ loop:
   add   $4, %rcx
   jmp    loop
 endloop:
-#app_logic: start permutation
+##2. app_distribute
+# start permutation
   mov %rdi,%r8  #r8 = inter1
   mov %rsi,%r12 # r12 = size1
   sall $2,%r12d  # r12=4*size1
@@ -54,6 +57,6 @@ loop2:
   jmp loop2
 endloop2:
 #popq %rbp
-#xend
+##3. xend
   xend
   ret
