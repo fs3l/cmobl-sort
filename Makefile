@@ -10,6 +10,7 @@ SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= HW
 SGX_PRELEASE ?= 0
 SGX_DEBUG ?= 1
+MEL_BASELINE ?= 1
 
 ifneq ($(SGX_DEBUG), 1) 
 	SGX_PRERELEASE ?= 1
@@ -54,7 +55,11 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
+ifeq ($(MEL_BASELINE), 1) 
+App_Cpp_Files := App/App_baseline.cpp $(wildcard App/Edger8rSyntax/*.cpp)
+else
 App_Cpp_Files := App/App2.cpp $(wildcard App/Edger8rSyntax/*.cpp)
+endif
 App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include
 
 App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
@@ -96,7 +101,11 @@ else
 	Crypto_Library_Name := sgx_tcrypto
 endif
 
+ifeq ($(MEL_BASELINE), 1)
+Enclave_Cpp_Files := Enclave/Enclave_baseline.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
+else
 Enclave_Cpp_Files := Enclave/Enclave2.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
+endif
 Enclave_Asm_Files := Enclave/cpu_compute.s Enclave/abort_handling.s Enclave/exp.s Enclave/exp_cachemiss.s Enclave/tx_begin.s Enclave/tx_end.s
 Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport
 

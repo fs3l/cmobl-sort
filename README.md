@@ -1,3 +1,26 @@
+experiment
+===
+
+baseline
+---
+
+Edit Makefile, set MEL_BASELINE = 1
+make clean
+make
+./app.out
+
+
+tx oblivious
+---
+
+Edit Makefile, set MEL_BASELINE = 0
+make clean
+make
+./app.out
+
+
+
+
 real run
 ---
 
