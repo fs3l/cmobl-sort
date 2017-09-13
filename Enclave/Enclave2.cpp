@@ -8,6 +8,9 @@
 #include "Enclave.h"
 #include "Enclave_t.h"  /* bar*/
 
+#include <setjmp.h>
+
+jmp_buf bufferA;
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -48,7 +51,8 @@ extern "C" {
           :"esi","edi","edx","r14");
       __asm__("movl %%esi, %%r8d\n\t"
           "mov $0, %%eax\n\t"
-          "loop_ep_%=:mov %%rdi, %%rcx\n\t"
+           "mov %%rdi, %%rcx\n\t"
+          "loop_ep_%=:\n\t"
           "cmpl  %%r8d,%%eax\n\t"//  #r8d is the LSB of the r8
           "jge    endloop_ep_%=\n\t"
           "movl   $5, (%%rcx)\n\t"
@@ -57,7 +61,6 @@ extern "C" {
           "jmp    loop_ep_%=\n\t"
           "endloop_ep_%=:\n\t"
           "xbegin asm_abort_handler\n\t"
-          // "xbegin tx_abort\n\t"
           "mov %%rdi,%%rcx\n\t"
           "mov $0, %%eax\n\t"
           "loop_ip_%=:\n\t"
@@ -67,7 +70,8 @@ extern "C" {
           "addl   $1, %%eax\n\t"
           "add   $4, %%rcx\n\t"
           "jmp    loop_ip_%=\n\t"
-          "endloop_ip_%=:\n\t":::);
+          "endloop_ip_%=:\n\t"
+         :::);
     }
 
   __attribute__ ((always_inline)) void txend() {
@@ -147,8 +151,8 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
 //    applogic_distribute(txmem, txmem_size);
     app_distribute();
     txend();
-    for (int i=0;i<M_data_size;i++)
-      bar1("txmem[%d]=%d\n",i,txmem[i]);
+//    for (int i=0;i<M_data_size;i++)
+//      bar1("txmem[%d]=%d\n",i,txmem[i]);
 }
 
 /* ecall_foo:
@@ -159,7 +163,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
-  for (int i = 0; i < 1; i++){
+  for (int i = 0; i < SqrtN; i++){
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
   return 0;

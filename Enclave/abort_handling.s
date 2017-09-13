@@ -31,6 +31,6 @@ asm_abort_handler:
   pop %rcx
   pop %rbx
   pop %rax
-  sub $7,%r14
+  sub $15,%r14
   jmp %r14
   ret
