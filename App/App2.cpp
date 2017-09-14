@@ -15,11 +15,29 @@
 #include "Enclave_u.h"
 #include <pthread.h>
 #include <sched.h>
-int ecall_foo1(long M_data, long M_perm, long M_output)
+#define SIZE_MASK 0xfff
+#define WAYS_MASK 0xffc00000
+void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
+  __asm__(
+      "mov %4,%%eax\n\t"
+      "mov %5,%%ecx\n\t"
+      "cpuid\n\t" //  call cpuid instruction
+      "mov %%eax,%0\n\t"
+      "mov %%ebx,%1\n\t"
+      "mov %%ecx,%2\n\t"
+      "mov %%edx,%3\n\t"
+    //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
+      :"=r"(*eax),"=r"(*ebx),"=r"(*ecx),"=r"(*edx)// output equal to "movl  %%eax %1"
+      :"r"(code),"r"(*ecx)// input equal to "movl %1, %%eax"
+      :"%eax","%ebx","%ecx","%edx"// clobbered register
+  );
+}
+
+int ecall_foo1(long M_data, long M_perm, long M_output, int c_size)
 {
   sgx_status_t ret = SGX_ERROR_UNEXPECTED;
   int retval;
-  ret = ecall_foo(global_eid, &retval, M_data, M_perm, M_output);
+  ret = ecall_foo(global_eid, &retval, M_data, M_perm, M_output, c_size);
 
   if (ret != SGX_SUCCESS)
     abort();
@@ -278,15 +296,22 @@ int SGX_CDECL main(int argc, char *argv[])
   int32_t* M_data = new int32_t[N];
   int32_t* M_perm = new int32_t[N];
   int32_t* M_output = new int32_t[N];
-
+  int eax=0,ebx=0,ecx=1,edx=0,cl_size=0,n_ways=0;
+  int c_size = 0;
   copy_M_D(M_data, M_perm);
   struct sched_param param;
   param.sched_priority = 0;
   sched_setscheduler(0,SCHED_FIFO,&param);
+  cpuinfo(0x04,&eax,&ebx,&ecx,&edx);
+  cl_size = ebx & SIZE_MASK;
+  n_ways = (ebx & WAYS_MASK)>>22;
+  c_size = (cl_size+1)*(n_ways+1)*(ecx+1);
   struct timeval start,end;
   gettimeofday(&start,NULL);
-  retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output);
+  retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output, c_size);
   gettimeofday(&end,NULL);
+ // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
+ // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
   printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec)
         - (start.tv_sec * 1000000 + start.tv_usec)));
 //    printf("retval: %d\n", retval);

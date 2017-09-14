@@ -41,13 +41,13 @@ extern "C" {
   int asm_cache_miss_simulate(int32_t* data,int32_t size1);
 
   __attribute__ ((always_inline)) 
-    void txbegin(int32_t* txmem, int32_t M_output_size, int32_t M_data_size){
+    void txbegin(int32_t* txmem, int32_t nob_size, int32_t ob_size){
       __asm__("lea (%%rip),%%r14\n\t"
           "movl %0,%%esi\n\t"
           "mov %1,%%rdi\n\t"
           "movl %2,%%edx\n\t"
           :
-          :"r"(M_output_size),"r"(txmem),"r"(M_data_size)
+          :"r"(nob_size),"r"(txmem),"r"(ob_size)
           :"esi","edi","edx","r14");
       __asm__("movl %%esi, %%r8d\n\t"
           "mov $0, %%eax\n\t"
@@ -155,14 +155,18 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
 //      bar1("txmem[%d]=%d\n",i,txmem[i]);
 }
 
+
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
  */
-int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref)
+int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
 {
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
+  if (4*(2*SqrtN+SqrtN*BLOWUPFACTOR) > c_size) {
+    return 0;
+  }
   for (int i = 0; i < SqrtN; i++){
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
