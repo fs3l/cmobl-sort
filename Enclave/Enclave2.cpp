@@ -36,7 +36,6 @@ void copy_E_M(int32_t* M_data, int32_t* M_perm,
 }
 
 extern "C" {
-  int asm_apptx_distribute(int32_t* data, int32_t size1, int32_t size2);
   int asm_cache_hit_simulate(int32_t* data, int32_t size1);
   int asm_cache_miss_simulate(int32_t* data,int32_t size1);
 
@@ -85,6 +84,11 @@ extern "C" {
     bar1("tx aborted count=%d\n",i);
   }
 }
+
+__attribute__ ((always_inline)) void app_cleanup_msort(){
+    //TODO
+}
+
 __attribute__ ((always_inline)) void app_distribute(){
     __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
         "mov %%rsi,%%r12\n\t"  // r12 = size1
@@ -126,8 +130,13 @@ int32_t E_data[N];
 int32_t E_perm[N];
 int32_t E_output[N];
 
+void 
+memsetup_cleanup(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
+//TODO
+}
+
 void
-memsetup(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
+memsetup_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
 //TODO gen. value by simulation
   bar1("BLOWUPFACTOR=%d\n",BLOWUPFACTOR);
   static int32_t txmem[SqrtN*BLOWUPFACTOR+SqrtN+SqrtN];
@@ -143,10 +152,19 @@ memsetup(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_
   * size_p = 2*SqrtN + SqrtN* BLOWUPFACTOR;
 }
 
+void apptx_cleanup(int32_t* data, int32_t data_init, int32_t data_size){
+    int32_t* txmem;
+    int32_t txmem_size;
+    memsetup_cleanup(data, data_init, data_size, &txmem, &txmem_size);
+//    txbegin(txmem, txmem_size, 0);
+//    app_cleanup_msort();
+//    txend();
+}
+
 void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
     int32_t* txmem;
     int32_t txmem_size;
-    memsetup(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
+    memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
     txbegin(txmem, M_output_size, M_data_size);
 //    applogic_distribute(txmem, txmem_size);
     app_distribute();
@@ -170,6 +188,10 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   for (int i = 0; i < SqrtN; i++){
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
+  for (int j = 0; j < SqrtN; j++){
+    apptx_cleanup(M_output,j,SqrtN*BLOWUPFACTOR);
+  }
+ 
   return 0;
 }
 
