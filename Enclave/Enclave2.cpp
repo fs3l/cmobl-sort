@@ -131,7 +131,7 @@ int32_t E_perm[N];
 int32_t E_output[N];
 
 void 
-memsetup_cleanup(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
+memsetup_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
 //TODO
 }
 
@@ -152,10 +152,14 @@ memsetup_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, 
   * size_p = 2*SqrtN + SqrtN* BLOWUPFACTOR;
 }
 
-void apptx_cleanup(int32_t* data, int32_t data_init, int32_t data_size){
+void apptx_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
+//TODO
+
+}
+void apptx_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
     int32_t* txmem;
     int32_t txmem_size;
-    memsetup_cleanup(data, data_init, data_size, &txmem, &txmem_size);
+    memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
 //    txbegin(txmem, txmem_size, 0);
 //    app_cleanup_msort();
 //    txend();
@@ -189,7 +193,8 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
   for (int j = 0; j < SqrtN; j++){
-    apptx_cleanup(M_output,j,SqrtN*BLOWUPFACTOR);
+//    apptx_cleanup_msort(M_output,j,SqrtN*BLOWUPFACTOR);
+    apptx_cleanup_bsort(M_output,j,SqrtN*BLOWUPFACTOR);
   }
  
   return 0;
