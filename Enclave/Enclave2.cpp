@@ -11,6 +11,9 @@
 #include <setjmp.h>
 
 uint64_t context[100];
+int abort_count=0;
+int start_count=0;
+int finish_count=0;
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -75,15 +78,11 @@ extern "C" {
 
   __attribute__ ((always_inline)) void txend() {
     __asm__ ("xend");
-    static int j=0;
-    j++;
-    bar1("tx ended suc count=%d\n",j);
+    finish_count++;
   }
   void tx_abort(int code){
     //TODO
-    static int i=0;
-    i++;
-    bar1("tx aborted count=%d\n",i);
+    abort_count++;
   }
 }
 
@@ -281,7 +280,6 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
   int32_t* txmem;
   int32_t txmem_size;
   memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
-  static int k=0;
   __asm__(   "mov %%rax,%0\n\t"
           "mov %%rbx,%1\n\t"
           "mov %%rcx,%2\n\t"
@@ -316,8 +314,7 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
            "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
            "r"(context[10]),"r"(context[11]),"r"(context[12])
           :);
-  k++;
-  bar1("start tx count=%d\n",k);
+  start_count++;
   txbegin(txmem, M_output_size, M_data_size);
   //    applogic_distribute(txmem, txmem_size);
   app_distribute();
@@ -348,7 +345,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   for (int i = 0; i < SqrtN; i++){
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
-
+  bar1("start=%d,finish=%d,abort=%d\n",start_count,finish_count,abort_count);
   //for (int i=0;i<N*BLOWUPFACTOR;i++)
   //  bar1("M_putput[%d]=%d\n",i,M_output[i]); 
   /* unit test */
