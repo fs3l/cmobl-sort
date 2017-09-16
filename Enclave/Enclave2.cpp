@@ -10,7 +10,7 @@
 
 #include <setjmp.h>
 
-jmp_buf bufferA;
+uint64_t context[100];
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -41,13 +41,13 @@ extern "C" {
 
   __attribute__ ((always_inline)) 
     void txbegin(int32_t* txmem, int32_t nob_size, int32_t ob_size){
-      __asm__("lea (%%rip),%%r14\n\t"
-          "movl %0,%%esi\n\t"
+      __asm__(
+                 "movl %0,%%esi\n\t"
           "mov %1,%%rdi\n\t"
           "movl %2,%%edx\n\t"
           :
           :"r"(nob_size),"r"(txmem),"r"(ob_size)
-          :"esi","edi","edx","r14");
+          :"esi","edi","edx");
       __asm__("movl %%esi, %%r8d\n\t"
           "mov $0, %%eax\n\t"
           "mov %%rdi, %%rcx\n\t"
@@ -75,7 +75,9 @@ extern "C" {
 
   __attribute__ ((always_inline)) void txend() {
     __asm__ ("xend");
-    bar1("xend, %d\n",BLOWUPFACTOR);
+    static int j=0;
+    j++;
+    bar1("tx ended suc count=%d\n",j);
   }
   void tx_abort(int code){
     //TODO
@@ -181,7 +183,6 @@ memsetup_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size, int3
 void
 memsetup_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
   //TODO gen. value by simulation
-  bar1("BLOWUPFACTOR=%d\n",BLOWUPFACTOR);
   static int32_t txmem[SqrtN*BLOWUPFACTOR+SqrtN+SqrtN];
   int32_t* E_data_prime = &txmem[SqrtN*BLOWUPFACTOR];
   int32_t* E_perm_prime = &txmem[SqrtN*BLOWUPFACTOR+SqrtN];
@@ -280,6 +281,43 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
   int32_t* txmem;
   int32_t txmem_size;
   memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
+  static int k=0;
+  __asm__(   "mov %%rax,%0\n\t"
+          "mov %%rbx,%1\n\t"
+          "mov %%rcx,%2\n\t"
+          "mov %%rdx,%3\n\t"
+          "mov %%rdi,%4\n\t"
+          "mov %%rsi,%5\n\t"
+          "mov %%r8,%6\n\t"
+          "mov %%r9,%7\n\t"
+          "mov %%r10,%8\n\t"
+          "mov %%r11,%9\n\t"
+          "mov %%r12,%10\n\t"
+          "mov %%r13,%11\n\t"
+          "mov %%r15,%12\n\t"
+          "lea (%%rip),%%r14\n\t"
+          "mov %13,%%rax\n\t"
+          "mov %14,%%rbx\n\t"
+          "mov %15,%%rcx\n\t"
+          "mov %16,%%rdx\n\t"
+          "mov %17,%%rdi\n\t"
+          "mov %18,%%rsi\n\t"
+          "mov %19,%%r8\n\t"
+          "mov %20,%%r9\n\t"
+          "mov %21,%%r10\n\t"
+          "mov %22,%%r11\n\t"
+          "mov %23,%%r12\n\t"
+          "mov %24,%%r13\n\t"
+          "mov %25,%%r15\n\t"
+          :"=r"(context[0]),"=r"(context[1]),"=r"(context[2]),"=r"(context[3]),"=r"(context[4]),
+           "=r"(context[5]),"=r"(context[6]),"=r"(context[7]),"=r"(context[8]),"=r"(context[9]),
+           "=r"(context[10]),"=r"(context[11]),"=r"(context[12])
+          :"r"(context[0]),"r"(context[1]),"r"(context[2]),"r"(context[3]),"r"(context[4]),
+           "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
+           "r"(context[10]),"r"(context[11]),"r"(context[12])
+          :);
+  k++;
+  bar1("start tx count=%d\n",k);
   txbegin(txmem, M_output_size, M_data_size);
   //    applogic_distribute(txmem, txmem_size);
   app_distribute();
@@ -314,7 +352,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   //for (int i=0;i<N*BLOWUPFACTOR;i++)
   //  bar1("M_putput[%d]=%d\n",i,M_output[i]); 
   /* unit test */
-  testMergeSort();  
+  //testMergeSort();  
   //for (int j = 0; j < SqrtN; j++){
   //  int32_t* ret = apptx_cleanup_msort(M_output,j,SqrtN*BLOWUPFACTOR);
   //  for(int i=0;i<SqrtN*BLOWUPFACTOR;i++)
