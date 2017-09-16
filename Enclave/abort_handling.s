@@ -33,4 +33,3 @@ asm_abort_handler:
   pop %rax
   sub $15,%r14
   jmp %r14
-  ret

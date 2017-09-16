@@ -295,7 +295,9 @@ int SGX_CDECL main(int argc, char *argv[])
 
   int32_t* M_data = new int32_t[N];
   int32_t* M_perm = new int32_t[N];
-  int32_t* M_output = new int32_t[N];
+  int32_t* M_output = new int32_t[N*BLOWUPFACTOR];
+  for (int i=0;i<N*BLOWUPFACTOR;i++)
+    M_output[i]=-1;
   int eax=0,ebx=0,ecx=1,edx=0,cl_size=0,n_ways=0;
   int c_size = 0;
   copy_M_D(M_data, M_perm);
