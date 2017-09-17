@@ -106,25 +106,50 @@ __attribute__ ((always_inline)) void app_merge(){
       "mov %%rdx,%%r12\n\t"  //r12 = size2
       "sall $2,%%r12d\n\t"  //r12=r12*4
       "add %%r12,%%r9\n\t"  //r9 is now src2
+      "mov %%rdi,%%r12\n\t"  //r12 is now txmem
       "mov $0,%%eax\n\t"  //eax = i = 0
       "mov $0,%%ebx\n\t"  //ebx = j = 0
-      "mov $0,%%ecx\n\t"  //ecx = k = 0
-      "loop_dis_%=:\n\t"
+      "loop_merge_%=:\n\t"  
       "cmpl %%edx,%%eax\n\t"
-      "jge endloop_dis_%=\n\t"
+      "jge endloop_merge_%=\n\t"
       "cmpl %%edx,%%ebx\n\t"
-      "jge endloop_dis_%=\n\t"
-      "movl (%%r8),%%r10d\n\t"  //data[i] -> r10
-      "movl (%%r9),%%r11d\n\t"  //permu[i] -> r11
-      "sall $2,%%r11d\n\t"     //r11 = r11 *4
-      "mov %%rdi,%%rcx\n\t"  //rcx = txmem
-      "add  %%r11,%%rcx\n\t"    //rcx is now output[permu[i]]
-      "movl %%r10d,(%%rcx)\n\t" //assign value
-      "addl $1,%%eax\n\t"  //increment
-      "add $4,%%r8\n\t"   //increment
-      "add $4,%%r9\n\t"  //increment
-      "jmp loop_dis_%=\n\t"
-      "endloop_dis_%=:\n\t":::);
+      "jge endloop_merge_%=\n\t"
+      "movl (%%r8),%%r10d\n\t"  //src1[i] -> r10
+      "movl (%%r9),%%r11d\n\t"  //src2[j] -> r11
+      "movl %%r10d,(%%r12)\n\t" //assign value
+      "addl $1,%%eax\n\t"  //i++
+      "add $4,%%r8\n\t"  //i++
+      "cmpl %%r10d,%%r11d\n\t"
+      "jge another_path_%=\n\t"     
+      "movl %%r11d,(%%r12)\n\t" //assign value
+      "addl $1,%%ebx\n\t"  //j++
+      "add $4,%%r9\n\t"  //j++
+      "subl $1,%%eax\n\t"
+      "sub $4,%%r8\n\t"
+      "another_path_%=:\n\t"  
+      "add $4,%%r12\n\t"   //k++
+      "jmp loop_merge_%=\n\t"
+      "endloop_merge_%=:\n\t"
+      "loop_append1_%=:\n\t"  
+      "cmpl %%edx,%%eax\n\t"
+      "jge endloop_append1_%=\n\t"
+      "movl (%%r8),%%r10d\n\t"  //src1[i] -> r10
+      "movl %%r10d,(%%r12)\n\t" //assign value
+      "addl $1,%%eax\n\t"  //i++
+      "add $4,%%r8\n\t"  //i++
+      "add $4,%%r12\n\t"   //k++
+      "jmp loop_append1_%=\n\t"
+      "endloop_append1_%=:\n\t"
+      "loop_append2_%=:\n\t"  
+      "cmpl %%edx,%%ebx\n\t"
+      "jge endloop_append2_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //src2[j] -> r11
+      "movl %%r11d,(%%r12)\n\t" //assign value
+      "addl $1,%%ebx\n\t"  //j++
+      "add $4,%%r9\n\t"  //j++
+      "add $4,%%r12\n\t"   //k++
+      "jmp loop_append2_%=\n\t"
+      "endloop_append2_%=:\n\t":::);
 }
 
 __attribute__ ((always_inline)) void app_distribute(){
@@ -245,7 +270,8 @@ void do_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   for(int q=0;q<stride;q++)
     tx_mem[q+3*stride] = src2[q];
   txbegin(tx_mem, 2*stride, stride);
-  int i = 0;
+  app_merge();
+ /* int i = 0;
   int j= 0;
   int k= 0;
   while (i<stride && j<stride) {
@@ -255,6 +281,7 @@ void do_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   }
   while (i<stride) {tx_mem[k]=tx_mem[2*stride+i];i++;k++;}    
   while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}    
+  */
   txend();
   for(int p=0;p<2*stride;p++)
     dst[p] = tx_mem[p];
@@ -324,7 +351,7 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
 }
 
 void testMergeSort() {
-  int32_t data[8] = {8,7,6,5,4,3,2,1};
+  int32_t data[8] = {8,1,6,5,7,2,3,4};
   int32_t* data1 = apptx_cleanup_msort(data,0,8);
   for(int i=0;i<8;i++)
     bar1("data1[%d]=%d\n",i,data1[i]);
@@ -345,11 +372,11 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   for (int i = 0; i < SqrtN; i++){
     apptx_distribute(M_data,i,SqrtN,M_perm,i,M_output,i,SqrtN*BLOWUPFACTOR);
   }
-  bar1("start=%d,finish=%d,abort=%d\n",start_count,finish_count,abort_count);
+ // bar1("start=%d,finish=%d,abort=%d\n",start_count,finish_count,abort_count);
   //for (int i=0;i<N*BLOWUPFACTOR;i++)
   //  bar1("M_putput[%d]=%d\n",i,M_output[i]); 
   /* unit test */
-  //testMergeSort();  
+  testMergeSort();  
   //for (int j = 0; j < SqrtN; j++){
   //  int32_t* ret = apptx_cleanup_msort(M_output,j,SqrtN*BLOWUPFACTOR);
   //  for(int i=0;i<SqrtN*BLOWUPFACTOR;i++)
