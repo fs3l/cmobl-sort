@@ -308,6 +308,11 @@ int SGX_CDECL main(int argc, char *argv[])
   cl_size = ebx & SIZE_MASK;
   n_ways = (ebx & WAYS_MASK)>>22;
   c_size = (cl_size+1)*(n_ways+1)*(ecx+1);
+  for (int i=0;i<N;i++) M_data[i] = i;
+  M_perm[0] = 1;  
+  M_perm[1] = 3;  
+  M_perm[2] = 2;  
+  M_perm[3] = 0;  
   struct timeval start,end;
   gettimeofday(&start,NULL);
   retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output, c_size);
