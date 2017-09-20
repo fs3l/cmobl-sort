@@ -90,17 +90,6 @@ extern "C" {
 }
 
 __attribute__ ((always_inline)) void app_merge(){
-  /*
-     int i = 0;
-     int j= 0;
-     int k= 0;
-     while (i<stride && j<stride) {
-     if (tx_mem[2*stride+i] < tx_mem[3*stride+j]) {tx_mem[k]=tx_mem[2*stride+i];i++;}
-     else {tx_mem[k]=tx_mem[3*stride+j];j++;}
-     k++;
-     }
-     while (i<stride) {tx_mem[k]=tx_mem[2*stride+i];i++;k++;}    
-     while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}*/ 
   __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
       "mov %%rsi,%%r12\n\t"  // r12 = size1
       "sall $2,%%r12d\n\t"  // r12=4*size1
@@ -122,16 +111,16 @@ __attribute__ ((always_inline)) void app_merge(){
       "movl %%r10d,(%%r12)\n\t" //assign value
       "movl 4(%%r8),%%r13d\n\t"  //src1[i+1] -> r13
       "movl %%r13d,4(%%r12)\n\t" //assign value
-      "addl $1,%%eax\n\t"  //i++
+      "addl $2,%%eax\n\t"  //i++
       "add $8,%%r8\n\t"  //i++
       "cmpl %%r10d,%%r11d\n\t"
       "jge another_path_%=\n\t"     
       "movl %%r11d,(%%r12)\n\t" //assign value
       "movl 4(%%r9),%%r13d\n\t"  //src1[i+1] -> r13
       "movl %%r13d,4(%%r12)\n\t" //assign value
-      "addl $1,%%ebx\n\t"  //j++
+      "addl $2,%%ebx\n\t"  //j++
       "add $8,%%r9\n\t"  //j++
-      "subl $1,%%eax\n\t"
+      "subl $2,%%eax\n\t"
       "sub $8,%%r8\n\t"
       "another_path_%=:\n\t"  
       "add $8,%%r12\n\t"   //k++
@@ -144,7 +133,7 @@ __attribute__ ((always_inline)) void app_merge(){
       "movl %%r10d,(%%r12)\n\t" //assign value
       "movl 4(%%r8),%%r10d\n\t"  //src1[i] -> r10
       "movl %%r10d,4(%%r12)\n\t" //assign value
-      "addl $1,%%eax\n\t"  //i++
+      "addl $2,%%eax\n\t"  //i++
       "add $8,%%r8\n\t"  //i++
       "add $8,%%r12\n\t"   //k++
       "jmp loop_append1_%=\n\t"
@@ -156,7 +145,7 @@ __attribute__ ((always_inline)) void app_merge(){
       "movl %%r11d,(%%r12)\n\t" //assign value
       "movl 4(%%r9),%%r11d\n\t"  //src2[j] -> r11
       "movl %%r11d,4(%%r12)\n\t" //assign value
-      "addl $1,%%ebx\n\t"  //j++
+      "addl $2,%%ebx\n\t"  //j++
       "add $8,%%r9\n\t"  //j++
       "add $8,%%r12\n\t"   //k++
       "jmp loop_append2_%=\n\t"
@@ -166,12 +155,15 @@ __attribute__ ((always_inline)) void app_merge(){
 /*
    data layout:
 
+output:
    pointer perm data perm data  ... ... perm data
    .............................................
    pointer perm data perm data  ... ... perm data 
 
+data
    data data ... ... data
 
+perm
    pos perm pos perm ... ... pos perm
 
  */
@@ -209,40 +201,6 @@ __attribute__ ((always_inline)) void app_distribute2(){
       "add $8,%%r9\n\t"  //increment
       "jmp loop_dis_%=\n\t"
       "endloop_dis_%=:\n\t":::);
-}
-
-
-__attribute__ ((always_inline)) void app_distribute(){
-  __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
-      "mov %%rsi,%%r12\n\t"  // r12 = size1
-      "sall $2,%%r12d\n\t"  // r12=4*size1
-      "add %%r12,%%r8\n\t"   //r8 is data
-      "mov %%r8,%%r9\n\t"    // r9 = data
-      "mov %%rdx,%%r12\n\t"  //r12 = size2
-      "sall $2,%%r12d\n\t"  //r12=r12*4
-      "add %%r12,%%r9\n\t"  //r9 is now permu
-      "mov $0,%%eax\n\t"  //eax = 0
-      "loop_dis_%=:\n\t"
-      "cmpl %%edx,%%eax\n\t"
-      "jge endloop_dis_%=\n\t"
-      "movl (%%r8),%%r10d\n\t"  //data[i] -> r10
-      "movl (%%r9),%%r11d\n\t"  //permu[i] -> r11
-      "sall $2,%%r11d\n\t"     //r11 = r11 *4
-      "mov %%rdi,%%rcx\n\t"  //rcx = txmem
-      "add  %%r11,%%rcx\n\t"    //rcx is now output[permu[i]]
-      "movl %%r10d,(%%rcx)\n\t" //assign value
-      "addl $1,%%eax\n\t"  //increment
-      "add $4,%%r8\n\t"   //increment
-      "add $4,%%r9\n\t"  //increment
-      "jmp loop_dis_%=\n\t"
-      "endloop_dis_%=:\n\t":::);
-}
-
-void applogic_distribute(int32_t* txmem, int32_t size){
-  // int tmp[1000];// = new int[1000];
-  // asm_cache_miss_simulate(tmp,1000);
-  // int ret = asm_apptx_distribute(txmem,SqrtN*BLOWUPFACTOR,SqrtN);
-  return;
 }
 
 void copy_M_E(int32_t* E_output, int32_t* M_output){
@@ -321,15 +279,16 @@ void cas_plain(int* a,int* b, int dir) {
    }*/
 
 
-void apptx_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
+void app_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
   int i, j;
   for (i=0;i<data_size-1;i++)
     for (j=0;j<data_size-i-1;j++)
       cas_plain(&data[j],&data[j+1],1);
 }
 
-void do_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
+void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   int32_t* tx_mem = new int[4*stride];
+  start_count++;
   __asm__(   "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
       "mov %%rcx,%2\n\t"
@@ -364,7 +323,7 @@ void do_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
       "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
       "r"(context[10]),"r"(context[11]),"r"(context[12])
            :);
-
+  //memsetup
   for(int p=0;p<stride;p++)
     tx_mem[p+2*stride] = src1[p];
   for(int q=0;q<stride;q++)
@@ -389,7 +348,7 @@ void do_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
 
 }
 
-int32_t*  apptx_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
+int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
   int32_t* txmem;
   int32_t txmem_size;
   memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
@@ -397,7 +356,7 @@ int32_t*  apptx_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_siz
   int32_t* swap;
   for(int stride=2;stride<data_size;stride*=2) {
     for(int j=0; j<data_size; j+=2*stride)
-      do_merge(tmp_data+j,txmem+j,txmem+j+stride,stride);
+      apptx_merge(tmp_data+j,txmem+j,txmem+j+stride,stride);
     swap = txmem;
     txmem = tmp_data;
     tmp_data = txmem;
@@ -405,11 +364,14 @@ int32_t*  apptx_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_siz
   return txmem;
 }
 
-void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* interm, int32_t M_output_init, int32_t M_output_size){
+void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
   int32_t* txmem;
   int32_t txmem_size;
-  memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, interm, M_output_init, M_output_size, &txmem, &txmem_size);
-  __asm__(   "mov %%rax,%0\n\t"
+  start_count++;
+  memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
+//TODO-TODAY pack a function
+//TODO-TODAY relocate recover code to abort handler
+ __asm__(   "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
       "mov %%rcx,%2\n\t"
       "mov %%rdx,%3\n\t"
@@ -443,19 +405,19 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
       "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
       "r"(context[10]),"r"(context[11]),"r"(context[12])
            :);
-  start_count++;
   txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
   //    applogic_distribute(txmem, txmem_size);
   app_distribute2();
   txend();
   for(int i=0;i<SqrtN;i++)
     for(int j=0;j<2*BLOWUPFACTOR;j++) {
-      interm[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] = txmem[i*(2*BLOWUPFACTOR+1)+j+1]; }
+      M_output[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] = txmem[i*(2*BLOWUPFACTOR+1)+j+1]; 
+    }
 }
 
 void testMergeSort() {
   int32_t data[8] = {8,1,6,5,7,2,3,4};
-  int32_t* data1 = apptx_cleanup_msort(data,0,8);
+  int32_t* data1 = apptxs_cleanup_msort(data,0,8);
   for(int i=0;i<8;i++)
     EPrintf("data1[%d]=%d\n",i,data1[i]);
 }
@@ -469,6 +431,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
+//TODO-TODAY MOVE: txbegin
   if (4*(2*SqrtN+SqrtN*BLOWUPFACTOR) > c_size) {
     return 0;
   }
@@ -479,7 +442,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   /* unit test */
   //testMergeSort();  
   for (int j = 0; j < SqrtN; j++){
-    int32_t* ret = apptx_cleanup_msort(scratch,j,2*SqrtN*BLOWUPFACTOR);
+    int32_t* ret = apptxs_cleanup_msort(scratch,j,2*SqrtN*BLOWUPFACTOR);
     for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
       EPrintf("ret[%d]=%d\n",i,ret[i]);
   }
@@ -496,3 +459,40 @@ void ecall_sgx_cpuid(int cpuinfo[4], int leaf)
   if (ret != SGX_SUCCESS)
     abort();
 }
+
+////////TOREMOVE////////
+
+__attribute__ ((always_inline)) void app_distribute(){
+  __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
+      "mov %%rsi,%%r12\n\t"  // r12 = size1
+      "sall $2,%%r12d\n\t"  // r12=4*size1
+      "add %%r12,%%r8\n\t"   //r8 is data
+      "mov %%r8,%%r9\n\t"    // r9 = data
+      "mov %%rdx,%%r12\n\t"  //r12 = size2
+      "sall $2,%%r12d\n\t"  //r12=r12*4
+      "add %%r12,%%r9\n\t"  //r9 is now permu
+      "mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis_%=:\n\t"
+      "cmpl %%edx,%%eax\n\t"
+      "jge endloop_dis_%=\n\t"
+      "movl (%%r8),%%r10d\n\t"  //data[i] -> r10
+      "movl (%%r9),%%r11d\n\t"  //permu[i] -> r11
+      "sall $2,%%r11d\n\t"     //r11 = r11 *4
+      "mov %%rdi,%%rcx\n\t"  //rcx = txmem
+      "add  %%r11,%%rcx\n\t"    //rcx is now output[permu[i]]
+      "movl %%r10d,(%%rcx)\n\t" //assign value
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $4,%%r9\n\t"  //increment
+      "jmp loop_dis_%=\n\t"
+      "endloop_dis_%=:\n\t":::);
+}
+
+void applogic_distribute(int32_t* txmem, int32_t size){
+  // int tmp[1000];// = new int[1000];
+  // asm_cache_miss_simulate(tmp,1000);
+  // int ret = asm_apptx_distribute(txmem,SqrtN*BLOWUPFACTOR,SqrtN);
+  return;
+}
+
+
