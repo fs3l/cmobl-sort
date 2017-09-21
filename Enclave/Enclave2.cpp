@@ -10,11 +10,12 @@
 
 #include <setjmp.h>
 
-uint64_t context[100];
-int abort_count=0;
-int start_count=0;
-int finish_count=0;
-int32_t scratch[2*BLOWUPFACTOR*N];
+uint64_t gContext[100];
+int g_aborts=0;
+int g_starts=0;
+int g_finishes=0;
+int32_t g_scratch[2*BLOWUPFACTOR*N];
+int32_t g_tx_mem[8192];
 
 /* 
  * printf: 
@@ -82,10 +83,10 @@ extern "C" {
 
   __attribute__ ((always_inline)) void txend() {
     __asm__ ("xend");
-    finish_count++;
+    g_finishes++;
   }
   void tx_abort(int code){
-    abort_count++;
+    g_aborts++;
   }
 }
 
@@ -156,15 +157,15 @@ __attribute__ ((always_inline)) void app_merge(){
    data layout:
 
 output:
-   pointer perm data perm data  ... ... perm data
-   .............................................
-   pointer perm data perm data  ... ... perm data 
+pointer perm data perm data  ... ... perm data
+.............................................
+pointer perm data perm data  ... ... perm data 
 
 data
-   data data ... ... data
+data data ... ... data
 
 perm
-   pos perm pos perm ... ... pos perm
+pos perm pos perm ... ... pos perm
 
  */
 
@@ -210,7 +211,7 @@ void copy_M_E(int32_t* E_output, int32_t* M_output){
 int32_t E_data[N];
 int32_t E_perm[N];
 int32_t E_output[N*BLOWUPFACTOR];
- 
+
 
 void 
 memsetup_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
@@ -287,8 +288,7 @@ void app_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
 }
 
 void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
-  int32_t* tx_mem = new int[4*stride];
-  start_count++;
+  g_starts++;
   __asm__(   "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
       "mov %%rcx,%2\n\t"
@@ -316,19 +316,23 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
       "mov %23,%%r12\n\t"
       "mov %24,%%r13\n\t"
       "mov %25,%%r15\n\t"
-      :"=r"(context[0]),"=r"(context[1]),"=r"(context[2]),"=r"(context[3]),"=r"(context[4]),
-    "=r"(context[5]),"=r"(context[6]),"=r"(context[7]),"=r"(context[8]),"=r"(context[9]),
-    "=r"(context[10]),"=r"(context[11]),"=r"(context[12])
-      :"r"(context[0]),"r"(context[1]),"r"(context[2]),"r"(context[3]),"r"(context[4]),
-      "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
-      "r"(context[10]),"r"(context[11]),"r"(context[12])
+      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
+    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
+    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
+      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
+      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
+      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
            :);
   //memsetup
   for(int p=0;p<stride;p++)
-    tx_mem[p+2*stride] = src1[p];
+    g_tx_mem[p+2*stride] = src1[p];
   for(int q=0;q<stride;q++)
-    tx_mem[q+3*stride] = src2[q];
-  txbegin(tx_mem, 2*stride, stride);
+    g_tx_mem[q+3*stride] = src2[q];
+//  EPrintf("before\n");
+//  for (int i=0;i<4*stride;i++)
+//  EPrintf("%d,",g_tx_mem[i]);
+//  EPrintf("\n");
+  txbegin(g_tx_mem, 2*stride, stride);
   app_merge();
   /* int i = 0;
      int j= 0;
@@ -342,10 +346,13 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
      while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}    
    */
   txend();
+//  EPrintf("after\n");
+//  for (int i=0;i<4*stride;i++)
+//  EPrintf("%d,",g_tx_mem[i]);
+//  EPrintf("\n");
   for(int p=0;p<2*stride;p++) {
-    dst[p] = tx_mem[p];
+    dst[p] = g_tx_mem[p];
   }
-
 }
 
 int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
@@ -367,11 +374,11 @@ int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_si
 void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
   int32_t* txmem;
   int32_t txmem_size;
-  start_count++;
+  g_starts++;
   memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
-//TODO-TODAY pack a function
-//TODO-TODAY relocate recover code to abort handler
- __asm__(   "mov %%rax,%0\n\t"
+  //TODO-TODAY pack a function
+  //TODO-TODAY relocate recover code to abort handler
+  __asm__(   "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
       "mov %%rcx,%2\n\t"
       "mov %%rdx,%3\n\t"
@@ -398,12 +405,12 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
       "mov %23,%%r12\n\t"
       "mov %24,%%r13\n\t"
       "mov %25,%%r15\n\t"
-      :"=r"(context[0]),"=r"(context[1]),"=r"(context[2]),"=r"(context[3]),"=r"(context[4]),
-    "=r"(context[5]),"=r"(context[6]),"=r"(context[7]),"=r"(context[8]),"=r"(context[9]),
-    "=r"(context[10]),"=r"(context[11]),"=r"(context[12])
-      :"r"(context[0]),"r"(context[1]),"r"(context[2]),"r"(context[3]),"r"(context[4]),
-      "r"(context[5]),"r"(context[6]),"r"(context[7]),"r"(context[8]),"r"(context[9]),
-      "r"(context[10]),"r"(context[11]),"r"(context[12])
+      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
+    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
+    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
+      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
+      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
+      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
            :);
   txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
   //    applogic_distribute(txmem, txmem_size);
@@ -422,6 +429,47 @@ void testMergeSort() {
     EPrintf("data1[%d]=%d\n",i,data1[i]);
 }
 
+//return 1 if there is a overflow
+int checkOFlow(int32_t* aPerm) {
+  int count[SqrtN];
+  int bucket;
+  int max=0;
+  for(int i=0;i<SqrtN;i++) {
+    memset(count,0,sizeof(int32_t)*SqrtN);
+    for(int j=0;j<SqrtN;j++) {
+      bucket = aPerm[i*SqrtN+j]/SqrtN;
+      if (count[bucket]==BLOWUPFACTOR) return 1;
+      count[bucket]++;
+    }
+  }
+  return 0;
+}
+
+void swap(int *a,int *b)
+{       
+  int temp=*a;
+  *a=*b;
+  *b=temp;
+}
+
+void genRandom(int* permutation)
+{    
+    
+  unsigned int seed;
+  for (int i=0;i<N;i++) permutation[i]=i;
+  for(int i=0;i<=N-2;i++){
+    sgx_read_rand((unsigned char*)&seed,4);
+    int j = seed%(N-i);
+    swap(&permutation[i],&permutation[i+j]);
+  }
+}
+
+int verify(int32_t* data, int32_t* perm, int32_t* output)
+{
+  for (int i=0;i<N;i++) 
+      if (output[perm[i]]!=data[i]) return 1;
+  return 0;
+}
 
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
@@ -431,22 +479,62 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
-//TODO-TODAY MOVE: txbegin
+  //TODO-TODAY MOVE: txbegin
   if (4*(2*SqrtN+SqrtN*BLOWUPFACTOR) > c_size) {
     return 0;
   }
-  for (int i = 0; i < SqrtN; i++){
-    apptx_distribute(M_data,i,SqrtN,M_perm,i,scratch,i,SqrtN*BLOWUPFACTOR);
-  }
-  EPrintf("start=%d,finish=%d,abort=%d\n",start_count,finish_count,abort_count);
-  /* unit test */
-  //testMergeSort();  
-  for (int j = 0; j < SqrtN; j++){
-    int32_t* ret = apptxs_cleanup_msort(scratch,j,2*SqrtN*BLOWUPFACTOR);
-    for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-      EPrintf("ret[%d]=%d\n",i,ret[i]);
-  }
-  EPrintf("start=%d,finish=%d,abort=%d\n",start_count,finish_count,abort_count);
+    for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
+    EPrintf("\n");
+  int M_random[N];
+  int M_rr[N];
+  int M_dr[N];
+  //while(1) {
+    genRandom(M_random);
+
+    if(checkOFlow(M_random)) { 
+      EPrintf("random overflow\n");
+     //  continue;
+    }
+    for (int i = 0; i < SqrtN; i++){
+      apptx_distribute(M_perm,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
+    }
+    /* unit test */
+    //testMergeSort();  
+    int pos = 0;
+    for (int j = 0; j < SqrtN; j++){
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
+        if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
+    }
+    int aPoint = verify(M_perm,M_random,M_rr);
+    if(!aPoint) EPrintf("correct!\n");
+    else EPrintf("Wrong\n");
+    /*
+    if(checkOFlow(M_rr)) {
+      EPrintf("pi_r overflow\n");
+      continue;
+    }
+    EPrintf("run here 3\n");
+    for (int i = 0; i < SqrtN; i++){
+      apptx_distribute(M_data,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
+    }
+    pos = 0;
+    for (int j = 0; j < SqrtN; j++){
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
+        if (ret[i]!=-1) {M_dr[pos] = ret[i+1]; pos++;}
+    }
+    for (int i = 0; i < SqrtN; i++){
+      apptx_distribute(M_dr,i,SqrtN,M_rr,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
+    }
+    pos = 0;
+    for (int j = 0; j < SqrtN; j++){
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
+        if (ret[i]!=-1) {M_output[pos] = ret[i+1]; pos++;}
+    }
+    break;
+  }*/
   return 0;
 }
 

@@ -26,11 +26,11 @@ void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
       "mov %%ebx,%1\n\t"
       "mov %%ecx,%2\n\t"
       "mov %%edx,%3\n\t"
-    //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
+      //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
       :"=r"(*eax),"=r"(*ebx),"=r"(*ecx),"=r"(*edx)// output equal to "movl  %%eax %1"
       :"r"(code),"r"(*ecx)// input equal to "movl %1, %%eax"
       :"%eax","%ebx","%ecx","%edx"// clobbered register
-  );
+      );
 }
 
 int ecall_foo1(long M_data, long M_perm, long M_output, int c_size)
@@ -278,6 +278,24 @@ void copy_D_M(int32_t* M_output){
   util_copy_D_M_file(M_output, "/home/ju/workspace/sgxshuffle/output.dat");
 }
 
+void swap(int *a,int *b)
+{       
+  int temp=*a;
+  *a=*b;
+  *b=temp;
+}
+
+void permutation_generate(int* permutation, int n)
+{       
+  int i;
+  for(i=0;i<=n-2;i++){
+    int j=rand()%(n-i);
+    swap(&permutation[i],&permutation[i+j]);
+  }
+}
+
+
+
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
 {
@@ -295,7 +313,8 @@ int SGX_CDECL main(int argc, char *argv[])
 
   int32_t* M_data = new int32_t[N];
   int32_t* M_perm = new int32_t[N];
-  int32_t* M_output = new int32_t[N*BLOWUPFACTOR];
+  int32_t* M_output = new int32_t[N];
+  int32_t* M_sim_output = new int32_t[N];
   for (int i=0;i<N*BLOWUPFACTOR;i++)
     M_output[i]=-1;
   int eax=0,ebx=0,ecx=1,edx=0,cl_size=0,n_ways=0;
@@ -309,21 +328,24 @@ int SGX_CDECL main(int argc, char *argv[])
   n_ways = (ebx & WAYS_MASK)>>22;
   c_size = (cl_size+1)*(n_ways+1)*(ecx+1);
   for (int i=0;i<N;i++) M_data[i] = i;
-  M_perm[0] = 1;  
-  M_perm[1] = 3;  
-  M_perm[2] = 2;  
-  M_perm[3] = 0;  
+  for (int i=0;i<N;i++) M_perm[i] = i;
+  permutation_generate(M_perm, N);
   struct timeval start,end;
   gettimeofday(&start,NULL);
   retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output, c_size);
   gettimeofday(&end,NULL);
- // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
- // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
+  for(int i=0;i<N;i++)
+      M_sim_output[M_perm[i]] = M_data[i];
+  for(int i=0;i<N;i++)
+      if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
+  //printf("right\n");
+  // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
+  // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
   printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec)
         - (start.tv_sec * 1000000 + start.tv_usec)));
-//    printf("retval: %d\n", retval);
-    //TODO this call is buggy, FIXME
-    //    copy_D_M(M_output, j);
+  //    printf("retval: %d\n", retval);
+  //TODO this call is buggy, FIXME
+  //    copy_D_M(M_output, j);
 
   /* Destroy the enclave */
   sgx_destroy_enclave(global_eid);
