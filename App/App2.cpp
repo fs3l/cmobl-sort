@@ -338,7 +338,7 @@ int SGX_CDECL main(int argc, char *argv[])
       M_sim_output[M_perm[i]] = M_data[i];
   for(int i=0;i<N;i++)
       if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
-  //printf("right\n");
+  printf("final result right\n");
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
   printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec)

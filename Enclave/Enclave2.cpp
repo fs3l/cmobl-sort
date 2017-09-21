@@ -280,12 +280,43 @@ void cas_plain(int* a,int* b, int dir) {
    }*/
 
 
-void app_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
-  int i, j;
-  for (i=0;i<data_size-1;i++)
-    for (j=0;j<data_size-i-1;j++)
-      cas_plain(&data[j],&data[j+1],1);
+int32_t*  apptxs_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
+  int32_t* txmem;
+  int32_t txmem_size;
+  memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
+  EPrintf("in cleanup and txmem\n");
+  for(int i=0;i<txmem_size;i++)
+    EPrintf("%d,",txmem[i]);
+  EPrintf("\n");
+  for(int i=0;i<txmem_size-2;i+=2)
+    for(int j=0;j<txmem_size-i-2;j+=2)
+    {
+      if (txmem[j]>txmem[j+2]) {
+        int tmp = txmem[j+2];
+        txmem[j+2] = txmem[j];
+        txmem[j] = tmp;
+        tmp = txmem[j+3];
+        txmem[j+3] = txmem[j+1];
+        txmem[j+1] = tmp;
+      }
+    }
+  return txmem;
 }
+
+void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
+  //memsetup
+  int i = 0;
+  int j= 0;
+  int k= 0;
+  while (i<stride && j<stride) {
+    if (src1[i] < src2[j]) {dst[k]=src1[i];dst[k+1]=src1[i+1];i+=2;}
+    else {dst[k]=src2[j];dst[k+1]=src1[j+1];j+=2;}
+    k+=2;
+  }
+  while (i<stride) {dst[k]=src1[i];dst[k+1]=src1[i+1];i+=2;k+=2;}    
+  while (j<stride) {dst[k]=src2[j];dst[k+1]=src2[j+1];j+=2;k+=2;}    
+}
+
 
 void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   g_starts++;
@@ -328,10 +359,10 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
     g_tx_mem[p+2*stride] = src1[p];
   for(int q=0;q<stride;q++)
     g_tx_mem[q+3*stride] = src2[q];
-//  EPrintf("before\n");
-//  for (int i=0;i<4*stride;i++)
-//  EPrintf("%d,",g_tx_mem[i]);
-//  EPrintf("\n");
+  //  EPrintf("before\n");
+  //  for (int i=0;i<4*stride;i++)
+  //  EPrintf("%d,",g_tx_mem[i]);
+  //  EPrintf("\n");
   txbegin(g_tx_mem, 2*stride, stride);
   app_merge();
   /* int i = 0;
@@ -346,10 +377,10 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
      while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}    
    */
   txend();
-//  EPrintf("after\n");
-//  for (int i=0;i<4*stride;i++)
-//  EPrintf("%d,",g_tx_mem[i]);
-//  EPrintf("\n");
+  //  EPrintf("after\n");
+  //  for (int i=0;i<4*stride;i++)
+  //  EPrintf("%d,",g_tx_mem[i]);
+  //  EPrintf("\n");
   for(int p=0;p<2*stride;p++) {
     dst[p] = g_tx_mem[p];
   }
@@ -359,11 +390,16 @@ int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_si
   int32_t* txmem;
   int32_t txmem_size;
   memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
+  EPrintf("in cleanup and txmem\n");
+  for(int i=0;i<txmem_size;i++)
+    EPrintf("%d,",txmem[i]);
+  EPrintf("\n");
   int32_t* tmp_data = new int[data_size];
   int32_t* swap;
   for(int stride=2;stride<data_size;stride*=2) {
     for(int j=0; j<data_size; j+=2*stride)
       apptx_merge(tmp_data+j,txmem+j,txmem+j+stride,stride);
+    //c_merge(tmp_data+j,txmem+j,txmem+j+stride,stride);
     swap = txmem;
     txmem = tmp_data;
     tmp_data = txmem;
@@ -454,7 +490,7 @@ void swap(int *a,int *b)
 
 void genRandom(int* permutation)
 {    
-    
+
   unsigned int seed;
   for (int i=0;i<N;i++) permutation[i]=i;
   for(int i=0;i<=N-2;i++){
@@ -467,7 +503,7 @@ void genRandom(int* permutation)
 int verify(int32_t* data, int32_t* perm, int32_t* output)
 {
   for (int i=0;i<N;i++) 
-      if (output[perm[i]]!=data[i]) return 1;
+    if (output[perm[i]]!=data[i]) return 1;
   return 0;
 }
 
@@ -483,58 +519,75 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   if (4*(2*SqrtN+SqrtN*BLOWUPFACTOR) > c_size) {
     return 0;
   }
-    for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
-    EPrintf("\n");
+  EPrintf("permutation\n");
+  for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
+  EPrintf("\n");
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
-  //while(1) {
+  while(1) {
     genRandom(M_random);
 
+    /* shuffle pass 1  PiR = shuffle(Pi,R);*/
+
+    EPrintf("random\n");
+    for (int i=0;i<N;i++) EPrintf("%d,",M_random[i]);
+    EPrintf("\n");
     if(checkOFlow(M_random)) { 
       EPrintf("random overflow\n");
-     //  continue;
+      continue;
     }
     for (int i = 0; i < SqrtN; i++){
       apptx_distribute(M_perm,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
     /* unit test */
-    //testMergeSort();  
+    //testMergeSort(); 
+
+    EPrintf("g_scratch\n");
+    for (int i=0;i<2*N*BLOWUPFACTOR;i++)
+      EPrintf("%d,",g_scratch[i]);
+    EPrintf("\n");
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      EPrintf("ret\n");
+      for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
+        EPrintf("%d,",ret[i]);
+      EPrintf("\n");
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
     int aPoint = verify(M_perm,M_random,M_rr);
-    if(!aPoint) EPrintf("correct!\n");
-    else EPrintf("Wrong\n");
-    /*
+    if(!aPoint) EPrintf("distrbute correct!\n");
+    else EPrintf("distribute Wrong\n");
     if(checkOFlow(M_rr)) {
       EPrintf("pi_r overflow\n");
       continue;
     }
-    EPrintf("run here 3\n");
+
+    /* shuffle pass 2  Dr = shuffle(D,R);*/
     for (int i = 0; i < SqrtN; i++){
       apptx_distribute(M_data,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
     pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_dr[pos] = ret[i+1]; pos++;}
     }
+
+    /* shuffle pass 3   O = shuffle(Dr,PiR)*/
     for (int i = 0; i < SqrtN; i++){
       apptx_distribute(M_dr,i,SqrtN,M_rr,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
     pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_output[pos] = ret[i+1]; pos++;}
     }
     break;
-  }*/
+  }
   return 0;
 }
 
