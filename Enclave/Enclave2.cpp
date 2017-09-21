@@ -46,7 +46,52 @@ extern "C" {
   int asm_cache_miss_simulate(int32_t* data,int32_t size1);
 
   __attribute__ ((always_inline)) 
+    void contextsave(){
+  //TODO-TODAY relocate recover code to abort handler
+    __asm__(   "mov %%rax,%0\n\t"
+      "mov %%rbx,%1\n\t"
+      "mov %%rcx,%2\n\t"
+      "mov %%rdx,%3\n\t"
+      "mov %%rdi,%4\n\t"
+      "mov %%rsi,%5\n\t"
+      "mov %%r8,%6\n\t"
+      "mov %%r9,%7\n\t"
+      "mov %%r10,%8\n\t"
+      "mov %%r11,%9\n\t"
+      "mov %%r12,%10\n\t"
+      "mov %%r13,%11\n\t"
+      "mov %%r15,%12\n\t"
+      "lea (%%rip),%%r14\n\t"
+      "mov %13,%%rax\n\t"
+      "mov %14,%%rbx\n\t"
+      "mov %15,%%rcx\n\t"
+      "mov %16,%%rdx\n\t"
+      "mov %17,%%rdi\n\t"
+      "mov %18,%%rsi\n\t"
+      "mov %19,%%r8\n\t"
+      "mov %20,%%r9\n\t"
+      "mov %21,%%r10\n\t"
+      "mov %22,%%r11\n\t"
+      "mov %23,%%r12\n\t"
+      "mov %24,%%r13\n\t"
+      "mov %25,%%r15\n\t"
+      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
+    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
+    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
+      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
+      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
+      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
+           :);
+  }
+
+  int32_t cache_size;
+
+  __attribute__ ((always_inline)) 
     void txbegin(int32_t* txmem, int32_t nob_size, int32_t ob_size){
+      if (sizeof(int)*(nob_size+ob_size) > cache_size) {
+        return;
+      }
+
       __asm__(
           "movl %0,%%esi\n\t"
           "mov %1,%%rdi\n\t"
@@ -212,9 +257,8 @@ int32_t E_data[N];
 int32_t E_perm[N];
 int32_t E_output[N*BLOWUPFACTOR];
 
-
 void 
-memsetup_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
+matrix_prepare(int32_t* data, int32_t data_init, int32_t data_size, int32_t** txmem_p, int32_t* size_p){
   static int32_t msortMem[2*SqrtN*BLOWUPFACTOR];
   for(int i=0;i<2*SqrtN*BLOWUPFACTOR;i++) 
     msortMem[i] = data[i/(2*BLOWUPFACTOR)*2*BLOWUPFACTOR*SqrtN + i%(2*BLOWUPFACTOR) + data_init*2*BLOWUPFACTOR];
@@ -283,7 +327,7 @@ void cas_plain(int* a,int* b, int dir) {
 int32_t*  apptxs_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
   int32_t* txmem;
   int32_t txmem_size;
-  memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
+  matrix_prepare(data, data_init, data_size, &txmem, &txmem_size);
   EPrintf("in cleanup and txmem\n");
   for(int i=0;i<txmem_size;i++)
     EPrintf("%d,",txmem[i]);
@@ -320,40 +364,6 @@ void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
 
 void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   g_starts++;
-  __asm__(   "mov %%rax,%0\n\t"
-      "mov %%rbx,%1\n\t"
-      "mov %%rcx,%2\n\t"
-      "mov %%rdx,%3\n\t"
-      "mov %%rdi,%4\n\t"
-      "mov %%rsi,%5\n\t"
-      "mov %%r8,%6\n\t"
-      "mov %%r9,%7\n\t"
-      "mov %%r10,%8\n\t"
-      "mov %%r11,%9\n\t"
-      "mov %%r12,%10\n\t"
-      "mov %%r13,%11\n\t"
-      "mov %%r15,%12\n\t"
-      "lea (%%rip),%%r14\n\t"
-      "mov %13,%%rax\n\t"
-      "mov %14,%%rbx\n\t"
-      "mov %15,%%rcx\n\t"
-      "mov %16,%%rdx\n\t"
-      "mov %17,%%rdi\n\t"
-      "mov %18,%%rsi\n\t"
-      "mov %19,%%r8\n\t"
-      "mov %20,%%r9\n\t"
-      "mov %21,%%r10\n\t"
-      "mov %22,%%r11\n\t"
-      "mov %23,%%r12\n\t"
-      "mov %24,%%r13\n\t"
-      "mov %25,%%r15\n\t"
-      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
-    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
-    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
-      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
-      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
-      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
-           :);
   //memsetup
   for(int p=0;p<stride;p++)
     g_tx_mem[p+2*stride] = src1[p];
@@ -363,6 +373,7 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   //  for (int i=0;i<4*stride;i++)
   //  EPrintf("%d,",g_tx_mem[i]);
   //  EPrintf("\n");
+  contextsave();
   txbegin(g_tx_mem, 2*stride, stride);
   app_merge();
   /* int i = 0;
@@ -389,7 +400,7 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
 int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
   int32_t* txmem;
   int32_t txmem_size;
-  memsetup_cleanup_msort(data, data_init, data_size, &txmem, &txmem_size);
+  matrix_prepare(data, data_init, data_size, &txmem, &txmem_size);
   EPrintf("in cleanup and txmem\n");
   for(int i=0;i<txmem_size;i++)
     EPrintf("%d,",txmem[i]);
@@ -412,42 +423,7 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size
   int32_t txmem_size;
   g_starts++;
   memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
-  //TODO-TODAY pack a function
-  //TODO-TODAY relocate recover code to abort handler
-  __asm__(   "mov %%rax,%0\n\t"
-      "mov %%rbx,%1\n\t"
-      "mov %%rcx,%2\n\t"
-      "mov %%rdx,%3\n\t"
-      "mov %%rdi,%4\n\t"
-      "mov %%rsi,%5\n\t"
-      "mov %%r8,%6\n\t"
-      "mov %%r9,%7\n\t"
-      "mov %%r10,%8\n\t"
-      "mov %%r11,%9\n\t"
-      "mov %%r12,%10\n\t"
-      "mov %%r13,%11\n\t"
-      "mov %%r15,%12\n\t"
-      "lea (%%rip),%%r14\n\t"
-      "mov %13,%%rax\n\t"
-      "mov %14,%%rbx\n\t"
-      "mov %15,%%rcx\n\t"
-      "mov %16,%%rdx\n\t"
-      "mov %17,%%rdi\n\t"
-      "mov %18,%%rsi\n\t"
-      "mov %19,%%r8\n\t"
-      "mov %20,%%r9\n\t"
-      "mov %21,%%r10\n\t"
-      "mov %22,%%r11\n\t"
-      "mov %23,%%r12\n\t"
-      "mov %24,%%r13\n\t"
-      "mov %25,%%r15\n\t"
-      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
-    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
-    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
-      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
-      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
-      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
-           :);
+  contextsave();
   txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
   //    applogic_distribute(txmem, txmem_size);
   app_distribute2();
@@ -515,10 +491,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
-  //TODO-TODAY MOVE: txbegin
-  if (4*(2*SqrtN+SqrtN*BLOWUPFACTOR) > c_size) {
-    return 0;
-  }
+  cache_size = c_size;
   EPrintf("permutation\n");
   for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
   EPrintf("\n");
