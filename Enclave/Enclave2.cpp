@@ -61,27 +61,12 @@ extern "C" {
       "mov %%r12,%10\n\t"
       "mov %%r13,%11\n\t"
       "mov %%r15,%12\n\t"
+      "mov %13,%%r15\n\t"
       "lea (%%rip),%%r14\n\t"
-      "mov %13,%%rax\n\t"
-      "mov %14,%%rbx\n\t"
-      "mov %15,%%rcx\n\t"
-      "mov %16,%%rdx\n\t"
-      "mov %17,%%rdi\n\t"
-      "mov %18,%%rsi\n\t"
-      "mov %19,%%r8\n\t"
-      "mov %20,%%r9\n\t"
-      "mov %21,%%r10\n\t"
-      "mov %22,%%r11\n\t"
-      "mov %23,%%r12\n\t"
-      "mov %24,%%r13\n\t"
-      "mov %25,%%r15\n\t"
       :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
     "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
     "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
-      :"r"(gContext[0]),"r"(gContext[1]),"r"(gContext[2]),"r"(gContext[3]),"r"(gContext[4]),
-      "r"(gContext[5]),"r"(gContext[6]),"r"(gContext[7]),"r"(gContext[8]),"r"(gContext[9]),
-      "r"(gContext[10]),"r"(gContext[11]),"r"(gContext[12])
-           :);
+      :"r"(&gContext[0]):);
   }
 
   int32_t cache_size;
