@@ -313,10 +313,6 @@ int32_t*  apptxs_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_si
   int32_t* txmem;
   int32_t txmem_size;
   matrix_prepare(data, data_init, data_size, &txmem, &txmem_size);
-  EPrintf("in cleanup and txmem\n");
-  for(int i=0;i<txmem_size;i++)
-    EPrintf("%d,",txmem[i]);
-  EPrintf("\n");
   for(int i=0;i<txmem_size-2;i+=2)
     for(int j=0;j<txmem_size-i-2;j+=2)
     {
@@ -477,9 +473,9 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
   cache_size = c_size;
-  EPrintf("permutation\n");
-  for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
-  EPrintf("\n");
+//  EPrintf("permutation\n");
+//  for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
+//  EPrintf("\n");
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
@@ -488,9 +484,9 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
 
     /* shuffle pass 1  PiR = shuffle(Pi,R);*/
 
-    EPrintf("random\n");
-    for (int i=0;i<N;i++) EPrintf("%d,",M_random[i]);
-    EPrintf("\n");
+  //  EPrintf("random\n");
+  //  for (int i=0;i<N;i++) EPrintf("%d,",M_random[i]);
+  //  EPrintf("\n");
     if(checkOFlow(M_random)) { 
       EPrintf("random overflow\n");
       continue;
@@ -501,17 +497,17 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     /* unit test */
     //testMergeSort(); 
 
-    EPrintf("g_scratch\n");
-    for (int i=0;i<2*N*BLOWUPFACTOR;i++)
-      EPrintf("%d,",g_scratch[i]);
-    EPrintf("\n");
+    //EPrintf("g_scratch\n");
+    //for (int i=0;i<2*N*BLOWUPFACTOR;i++)
+    //  EPrintf("%d,",g_scratch[i]);
+    //EPrintf("\n");
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
       int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
-      EPrintf("ret\n");
-      for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-        EPrintf("%d,",ret[i]);
-      EPrintf("\n");
+      //EPrintf("ret\n");
+      //for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
+      //  EPrintf("%d,",ret[i]);
+      //EPrintf("\n");
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
