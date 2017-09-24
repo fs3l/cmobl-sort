@@ -356,13 +356,14 @@ void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
 
 void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   g_starts++;
+  int32_t otmem[4*stride];
+  contextsave();
   //memsetup
   for(int p=0;p<stride;p++)
-    g_tx_mem[p+2*stride] = src1[p];
+    otmem[p+2*stride] = src1[p];
   for(int q=0;q<stride;q++)
-    g_tx_mem[q+3*stride] = src2[q];
-  contextsave();
-  txbegin(g_tx_mem, 2*stride, stride);
+    otmem[q+3*stride] = src2[q];
+  txbegin(otmem, 2*stride, stride);
   app_merge();
   /* int i = 0;
      int j= 0;
@@ -377,7 +378,7 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
    */
   txend();
   for(int p=0;p<2*stride;p++) {
-    dst[p] = g_tx_mem[p];
+    dst[p] = otmem[p];
   }
 }
 
@@ -392,8 +393,8 @@ int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_si
   int32_t* swap;
   for(int stride=2;stride<data_size;stride*=2) {
     for(int j=0; j<data_size; j+=2*stride) {
-      //  apptx_merge(output+j,input+j,input+j+stride,stride); }
-      c_merge(output+j,input+j,input+j+stride,stride);}
+        apptx_merge(output+j,input+j,input+j+stride,stride); }
+      //c_merge(output+j,input+j,input+j+stride,stride);}
   swap = input;
   input = output;
   output = swap;
@@ -495,7 +496,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
 
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR-1;i+=2)
         if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
@@ -514,7 +515,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     }
     pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_dr[pos] = ret[i+1]; pos++;}
     }
@@ -525,7 +526,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     }
     pos = 0;
     for (int j = 0; j < SqrtN; j++){
-      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_output[pos] = ret[i+1]; pos++;}
     }
