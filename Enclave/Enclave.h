@@ -21,7 +21,8 @@ extern "C" {
 //TOREMOVE
 #define SqrtN 128
 #define N SqrtN*SqrtN
-#define BLOWUPFACTOR NBITS(N) //TODO blowupfactor = lg(N) ?
+#define BLOWUPFACTOR 16
+//#define BLOWUPFACTOR NBITS(N) //TODO blowupfactor = lg(N) ?
 //#define BLOWUPFACTOR 2*log(N)
 
 int bar1(const char *fmt, ...);

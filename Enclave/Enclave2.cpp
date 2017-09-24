@@ -49,27 +49,27 @@ extern "C" {
 
   __attribute__ ((always_inline)) 
     void contextsave(){
-  //TODO-TODAY relocate recover code to abort handler
-    __asm__(   "mov %%rax,%0\n\t"
-      "mov %%rbx,%1\n\t"
-      "mov %%rcx,%2\n\t"
-      "mov %%rdx,%3\n\t"
-      "mov %%rdi,%4\n\t"
-      "mov %%rsi,%5\n\t"
-      "mov %%r8,%6\n\t"
-      "mov %%r9,%7\n\t"
-      "mov %%r10,%8\n\t"
-      "mov %%r11,%9\n\t"
-      "mov %%r12,%10\n\t"
-      "mov %%r13,%11\n\t"
-      "mov %%r15,%12\n\t"
-      "mov %13,%%r15\n\t"
-      "lea (%%rip),%%r14\n\t"
-      :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
-    "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
-    "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
-      :"r"(&gContext[0]):);
-  }
+      //TODO-TODAY relocate recover code to abort handler
+      __asm__(   "mov %%rax,%0\n\t"
+          "mov %%rbx,%1\n\t"
+          "mov %%rcx,%2\n\t"
+          "mov %%rdx,%3\n\t"
+          "mov %%rdi,%4\n\t"
+          "mov %%rsi,%5\n\t"
+          "mov %%r8,%6\n\t"
+          "mov %%r9,%7\n\t"
+          "mov %%r10,%8\n\t"
+          "mov %%r11,%9\n\t"
+          "mov %%r12,%10\n\t"
+          "mov %%r13,%11\n\t"
+          "mov %%r15,%12\n\t"
+          "mov %13,%%r15\n\t"
+          "lea (%%rip),%%r14\n\t"
+          :"=r"(gContext[0]),"=r"(gContext[1]),"=r"(gContext[2]),"=r"(gContext[3]),"=r"(gContext[4]),
+          "=r"(gContext[5]),"=r"(gContext[6]),"=r"(gContext[7]),"=r"(gContext[8]),"=r"(gContext[9]),
+          "=r"(gContext[10]),"=r"(gContext[11]),"=r"(gContext[12])
+          :"r"(&gContext[0]):);
+    }
 
   int32_t cache_size;
 
@@ -321,26 +321,22 @@ void cas_plain(int* a,int* b, int dir) {
 
 
 int32_t*  apptxs_cleanup_bsort(int32_t* data, int32_t data_init, int32_t data_size){
-  int32_t* txmem;
-  int32_t txmem_size;
-  matrix_prepare_bsort(data, data_init, data_size, &txmem, &txmem_size);
-  for(int i=0;i<txmem_size-2;i+=2)
-    for(int j=0;j<txmem_size-i-2;j+=2)
+  int32_t* txmem1 = 0;
+  int32_t txmem_size1;
+  matrix_prepare_bsort(data, data_init, data_size, &txmem1, &txmem_size1);
+  for(int i=0;i<txmem_size1-2;i+=2)
+    for(int j=0;j<txmem_size1-i-2;j+=2)
     {
-      if (txmem[j]>txmem[j+2]) {
-        int tmp = txmem[j+2];
-        txmem[j+2] = txmem[j];
-        txmem[j] = tmp;
-        tmp = txmem[j+3];
-        txmem[j+3] = txmem[j+1];
-        txmem[j+1] = tmp;
+      if (txmem1[j]>txmem1[j+2]) {
+        int tmp = txmem1[j+2];
+        txmem1[j+2] = txmem1[j];
+        txmem1[j] = tmp;
+        tmp = txmem1[j+3];
+        txmem1[j+3] = txmem1[j+1];
+        txmem1[j+1] = tmp;
       }
     }
-  EPrintf("in bsort and ret\n");
-  for(int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-    EPrintf("%d," ,txmem[i]);
-  EPrintf("\n");
-  return txmem;
+  return txmem1;
 }
 
 void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
@@ -348,14 +344,6 @@ void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   int i = 0;
   int j= 0;
   int k= 0;
-  EPrintf("src1=\n");
-  for(int i=0;i<stride;i++)
-    EPrintf("%d,",src1[i]);
-  EPrintf("\n");
-  EPrintf("src2=\n");
-  for(int i=0;i<stride;i++)
-    EPrintf("%d,",src2[i]);
-  EPrintf("\n");
   while (i<stride && j<stride) {
     if (src1[i] < src2[j]) {dst[k]=src1[i];dst[k+1]=src1[i+1];i+=2;}
     else {dst[k]=src2[j];dst[k+1]=src2[j+1];j+=2;}
@@ -363,10 +351,6 @@ void c_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
   }
   while (i<stride) {dst[k]=src1[i];dst[k+1]=src1[i+1];i+=2;k+=2;}    
   while (j<stride) {dst[k]=src2[j];dst[k+1]=src2[j+1];j+=2;k+=2;} 
-  EPrintf("dst=\n");
-  for(int i=0;i<2*stride;i++)
-    EPrintf("%d,",dst[i]);
-  EPrintf("\n");
 }
 
 
@@ -377,10 +361,6 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
     g_tx_mem[p+2*stride] = src1[p];
   for(int q=0;q<stride;q++)
     g_tx_mem[q+3*stride] = src2[q];
-  //  EPrintf("before\n");
-  //  for (int i=0;i<4*stride;i++)
-  //  EPrintf("%d,",g_tx_mem[i]);
-  //  EPrintf("\n");
   contextsave();
   txbegin(g_tx_mem, 2*stride, stride);
   app_merge();
@@ -396,37 +376,29 @@ void apptx_merge(int32_t* dst, int32_t*src1,int32_t* src2,int stride) {
      while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}    
    */
   txend();
-  //  EPrintf("after\n");
-  //  for (int i=0;i<4*stride;i++)
-  //  EPrintf("%d,",g_tx_mem[i]);
-  //  EPrintf("\n");
   for(int p=0;p<2*stride;p++) {
     dst[p] = g_tx_mem[p];
   }
 }
 
 int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_size){
-  int32_t* txmem;
+  int32_t* txmem2 = 0;
   int32_t txmem_size;
-  matrix_prepare(data, data_init, data_size, &txmem, &txmem_size);
+  matrix_prepare(data, data_init, data_size, &txmem2, &txmem_size);
   int32_t* input;
   int32_t* output;
-  input = txmem;
+  input = txmem2;
   output = tmp_data;
   int32_t* swap;
   for(int stride=2;stride<data_size;stride*=2) {
     for(int j=0; j<data_size; j+=2*stride) {
-    //  apptx_merge(output+j,input+j,input+j+stride,stride); }
-    c_merge(output+j,input+j,input+j+stride,stride);}
-    swap = input;
-    input = output;
-    output = swap;
-  }
-  EPrintf("ret before return is\n");
-  for(int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-    EPrintf("%d,",input[i]);
-  EPrintf("\n");
-  return input;
+      //  apptx_merge(output+j,input+j,input+j+stride,stride); }
+      c_merge(output+j,input+j,input+j+stride,stride);}
+  swap = input;
+  input = output;
+  output = swap;
+}
+return input;
 }
 
 void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
@@ -503,9 +475,6 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int32_t* M_perm = (int32_t*)M_perm_ref;
   int32_t* M_output = (int32_t*)M_output_ref;
   cache_size = c_size;
-//  EPrintf("permutation\n");
-//  for (int i=0;i<N;i++) EPrintf("%d,",M_perm[i]);
-//  EPrintf("\n");
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
@@ -514,9 +483,6 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
 
     /* shuffle pass 1  PiR = shuffle(Pi,R);*/
 
-  //  EPrintf("random\n");
-  //  for (int i=0;i<N;i++) EPrintf("%d,",M_random[i]);
-  //  EPrintf("\n");
     if(checkOFlow(M_random)) { 
       EPrintf("random overflow\n");
       continue;
@@ -527,31 +493,17 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     /* unit test */
     //testMergeSort(); 
 
-    for (int i=0;i<2*N*BLOWUPFACTOR;i++) g_scratch_1[i] = g_scratch[i];
-    EPrintf("g_scratch\n");
-    for (int i=0;i<2*N*BLOWUPFACTOR;i++)
-      EPrintf("%d,",g_scratch[i]);
-    EPrintf("\n");
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
-     // int32_t* ret_bsort = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
-      int32_t* ret_msort = apptxs_cleanup_msort(g_scratch_1,j,2*SqrtN*BLOWUPFACTOR);
-     // EPrintf("ret_bsort\n");
-     // for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-     //   EPrintf("%d,",ret_bsort[i]);
-     // EPrintf("\n");
-    //  EPrintf("ret_msort\n");
-    //  for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i++)
-    //    EPrintf("%d,",ret_msort[i]);
-    //`  EPrintf("\n");
-     // for (int i=0;i<2*SqrtN*BLOWUPFACTOR-1;i+=2)
-      //  if (ret_bsort[i]!=-1) {M_rr[pos] = ret_bsort[i+1]; pos++;}
+      int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
+      for (int i=0;i<2*SqrtN*BLOWUPFACTOR-1;i+=2)
+        if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
     int aPoint = verify(M_perm,M_random,M_rr);
     if(!aPoint) EPrintf("distrbute correct!\n");
     else EPrintf("distribute Wrong\n");
-/*   
- if(checkOFlow(M_rr)) {
+
+    if(checkOFlow(M_rr)) {
       EPrintf("pi_r overflow\n");
       continue;
     }
@@ -576,7 +528,7 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
       int32_t* ret = apptxs_cleanup_bsort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR;i+=2)
         if (ret[i]!=-1) {M_output[pos] = ret[i+1]; pos++;}
-    }*/
+    }
     break;
   }
   return 0;
