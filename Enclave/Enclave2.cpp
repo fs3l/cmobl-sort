@@ -491,8 +491,9 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
     for (int i = 0; i < SqrtN; i++){
       apptx_distribute(M_perm,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
-    /* unit test */
-    //testMergeSort(); 
+
+/* unit test */
+//testMergeSort(); 
 
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
@@ -500,9 +501,11 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR-1;i+=2)
         if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
-    int aPoint = verify(M_perm,M_random,M_rr);
-    if(!aPoint) EPrintf("distrbute correct!\n");
-    else EPrintf("distribute Wrong\n");
+
+//debug
+int aPoint = verify(M_perm,M_random,M_rr);
+if(!aPoint) EPrintf("distrbute correct!\n");
+else EPrintf("distribute Wrong\n");
 
     if(checkOFlow(M_rr)) {
       EPrintf("pi_r overflow\n");
