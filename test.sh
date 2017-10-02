@@ -6,5 +6,6 @@ make
 #./gen.out
 ./app.out
 
-
+cd baseline_wordobl
+./test.sh
 
