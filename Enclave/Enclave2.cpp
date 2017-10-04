@@ -18,7 +18,7 @@ int32_t g_scratch[2*BLOWUPFACTOR*N];
 //debug
 int32_t g_scratch_1[2*BLOWUPFACTOR*N];
 int32_t g_tx_mem[8192];
-
+int32_t g_tx_dis_mem[12*1024] __attribute__ ((aligned (64)));;
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -73,6 +73,285 @@ extern "C" {
 
   int32_t cache_size;
 
+
+__attribute__ ((always_inline)) 
+    void txbegin64d2(int32_t* txmem, int32_t nob_size, int32_t ob_size){
+      //if (sizeof(int)*(nob_size+ob_size) > cache_size) {
+      //  return;
+     // }
+
+      __asm__(
+          "movl %0,%%esi\n\t"
+          "mov %1,%%rdi\n\t"
+          "movl %2,%%edx\n\t"
+          :
+          :"r"(nob_size),"r"(txmem),"r"(ob_size)
+          :"esi","edi","edx");
+      __asm__("movl %%esi, %%r8d\n\t"
+          "mov $0, %%eax\n\t"
+          "mov %%rdi, %%rcx\n\t"
+          "loop_ep_%=:\n\t"
+          "cmpl  $528,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "movl   %%r11d, (%%rcx)\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep_%=\n\t"
+          "endloop_ep_%=:\n\t"
+
+          "add $1984, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_epob1_%=:\n\t"
+          "cmpl  $528,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob1_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob1_%=\n\t"
+          "endloop_epob1_%=:\n\t"
+          
+          "add $1984, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_epob2_%=:\n\t"
+          "cmpl  $528,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob2_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob2_%=\n\t"
+          "endloop_epob2_%=:\n\t"
+          
+            "add $1984, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_epob3_%=:\n\t"
+          "cmpl  $528,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob3_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob3_%=\n\t"
+          "endloop_epob3_%=:\n\t"
+
+          "xbegin asm_abort_handler\n\t"
+        //  "mov %%rdi,%%rcx\n\t"
+        //  "mov $0, %%eax\n\t"
+        //  "loop_ip_%=:\n\t"
+        //  "cmpl  %%r8d,%%eax\n\t"
+        //  "jge    endloop_ip_%=\n\t"
+        //  "movl   (%%rcx),%%r11d\n\t"
+        //  "movl   %%r11d, (%%rcx)\n\t"
+        //  "addl   $1, %%eax\n\t"
+       //   "add   $4, %%rcx\n\t"
+       //   "jmp    loop_ip_%=\n\t"
+        //  "endloop_ip_%=:\n\t"
+                    :::);
+
+}
+
+__attribute__ ((always_inline)) 
+    void txbegin1(int32_t* txmem, int32_t nob_size, int32_t ob_size){
+      if (sizeof(int)*(nob_size+ob_size) > cache_size) {
+        return;
+      }
+
+      __asm__(
+          "movl %0,%%esi\n\t"
+          "mov %1,%%rdi\n\t"
+          "movl %2,%%edx\n\t"
+          :
+          :"r"(nob_size),"r"(txmem),"r"(ob_size)
+          :"esi","edi","edx");
+      __asm__("movl %%esi, %%r8d\n\t"
+          "mov $0, %%eax\n\t"
+          "mov %%rdi, %%rcx\n\t"
+          "loop_ep_%=:\n\t"
+          "cmpl  %%r8d,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "movl   %%r11d, (%%rcx)\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep_%=\n\t"
+          "endloop_ep_%=:\n\t"
+
+          "mov $0, %%eax\n\t"
+          "loop_epob1_%=:\n\t"
+          "cmpl  %%edx,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob1_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob1_%=\n\t"
+          "endloop_epob1_%=:\n\t"
+          
+          
+          "mov $0, %%eax\n\t"
+          "loop_epob2_%=:\n\t"
+          "cmpl  %%edx,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob2_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob2_%=\n\t"
+          "endloop_epob2_%=:\n\t"
+          
+           "mov $0, %%eax\n\t"
+          "loop_epob3_%=:\n\t"
+          "cmpl  %%edx,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_epob3_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_epob3_%=\n\t"
+          "endloop_epob3_%=:\n\t"
+
+          "add $3328, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep2_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep2_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep2_%=\n\t"
+          "endloop_ep2_%=:\n\t"
+          
+          "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep3_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep3_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep3_%=\n\t"
+          "endloop_ep3_%=:\n\t"
+
+          "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep4_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep4_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep4_%=\n\t"
+          "endloop_ep4_%=:\n\t"
+
+          "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep5_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep5_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep5_%=\n\t"
+          "endloop_ep5_%=:\n\t"
+          
+          "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep6_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep6_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep6_%=\n\t"
+          "endloop_ep6_%=:\n\t"
+
+           "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep7_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep7_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep7_%=\n\t"
+          "endloop_ep7_%=:\n\t"
+
+
+           "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep8_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep8_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep8_%=\n\t"
+          "endloop_ep8_%=:\n\t"
+
+         "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep9_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep9_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep9_%=\n\t"
+          "endloop_ep9_%=:\n\t"
+          
+          "add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep10_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep10_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep10_%=\n\t"
+          "endloop_ep10_%=:\n\t"
+"add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep11_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep11_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep11_%=\n\t"
+          "endloop_ep11_%=:\n\t"
+"add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep12_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep12_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep12_%=\n\t"
+          "endloop_ep12_%=:\n\t"
+"add $4032, %%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ep13_%=:\n\t"
+          "cmpl  $16,%%eax\n\t"//  #r8d is the LSB of the r8
+          "jge    endloop_ep13_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "addl   $1, %%eax\n\t"
+          "add    $4, %%rcx\n\t"
+          "jmp    loop_ep13_%=\n\t"
+          "endloop_ep13_%=:\n\t" 
+
+          "xbegin asm_abort_handler\n\t"
+          "mov %%rdi,%%rcx\n\t"
+          "mov $0, %%eax\n\t"
+          "loop_ip_%=:\n\t"
+          "cmpl  %%r8d,%%eax\n\t"
+          "jge    endloop_ip_%=\n\t"
+          "movl   (%%rcx),%%r11d\n\t"
+          "movl   %%r11d, (%%rcx)\n\t"
+          "addl   $1, %%eax\n\t"
+          "add   $4, %%rcx\n\t"
+          "jmp    loop_ip_%=\n\t"
+          "endloop_ip_%=:\n\t"
+                    :::);
+    }
+
+
   __attribute__ ((always_inline)) 
     void txbegin(int32_t* txmem, int32_t nob_size, int32_t ob_size){
       if (sizeof(int)*(nob_size+ob_size) > cache_size) {
@@ -117,8 +396,13 @@ extern "C" {
     __asm__ ("xend");
     g_finishes++;
   }
+  __attribute__ ((always_inline)) void txend1() {
+    __asm__ ("xend");
+    g_finishes++;
+  }
+
   void tx_abort(int code){
-    g_aborts++;
+  g_aborts++;
   }
 }
 
@@ -202,6 +486,446 @@ pos perm pos perm ... ... pos perm
  */
 
 
+__attribute__ ((always_inline)) void app_distribute5(){
+  __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
+      "mov %%rsi,%%r12\n\t"  // r12 = size1
+      "sall $2,%%r12d\n\t"  // r12=4*size1
+      "add $2112,%%r8\n\t"   //r8 is data
+      "mov %%r8,%%r9\n\t"    // r9 = data
+      "mov %%rdx,%%r12\n\t"  //r12 = size2
+      "sall $2,%%r12d\n\t"  //r12=r12*4
+      "add $64,%%r9\n\t"  //r9 is now permu
+      "mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis_%=:\n\t"
+      "cmpl $16,%%eax\n\t"
+      "jge endloop_dis_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis_%=\n\t"
+      "endloop_dis_%=:\n\t"
+     
+       "add $3968,%%r9\n\t"
+       "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis2_%=:\n\t"
+      "cmpl $16,%%eax\n\t"
+      "jge endloop_dis2_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis2_%=\n\t"
+      "endloop_dis2_%=:\n\t"
+
+      "add $3968,%%r9\n\t"
+      "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis3_%=:\n\t"
+      "cmpl $16,%%eax\n\t"
+      "jge endloop_dis3_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis3_%=\n\t"
+      "endloop_dis3_%=:\n\t"
+
+      "add $4032,%%r8\n\t" 
+      "add $3968,%%r9\n\t" 
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis4_%=:\n\t"
+      "cmpl $16,%%eax\n\t"
+      "jge endloop_dis4_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis4_%=\n\t"
+      "endloop_dis4_%=:\n\t":::);
+}
+
+__attribute__ ((always_inline)) void app_distribute4(){
+  __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
+      "mov %%rsi,%%r12\n\t"  // r12 = size1
+      "sall $2,%%r12d\n\t"  // r12=4*size1
+      "add %%r12,%%r8\n\t"   //r8 is data
+      "add $4096, %%r8\n\t" // r8 is data
+      "mov %%r8,%%r9\n\t"    // r9 = data
+     // "mov %%rdx,%%r12\n\t"  //r12 = size2
+    //  "sall $2,%%r12d\n\t"  //r12=r12*4
+      "add $16384,%%r9\n\t"  //r9 is now permu
+      "mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis1_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis1_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+     // "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis1_%=\n\t"
+      "endloop_dis1_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis2_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis2_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+     // "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis2_%=\n\t"
+      "endloop_dis2_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis3_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis3_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis3_%=\n\t"
+      "endloop_dis3_%=:\n\t"
+      "add $4032,%%r9\n\t" 
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis4_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis4_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis4_%=\n\t"
+      "endloop_dis4_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis5_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis5_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis5_%=\n\t"
+      "endloop_dis5_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis6_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis6_%=\n\t"
+      //"movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+     // "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis6_%=\n\t"
+      "endloop_dis6_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t" 
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis7_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis7_%=\n\t"
+     // "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+      //"movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis7_%=\n\t"
+      "endloop_dis7_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis8_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis8_%=\n\t"
+     // "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+    //  "movl (%%r8),%%r11d\n\t"  // r11 is data
+      //"movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis8_%=\n\t"
+      "endloop_dis8_%=:\n\t":::);
+}
+
+
+
+
+
+__attribute__ ((always_inline)) void app_distribute64d2(){
+  __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
+      "mov %%rsi,%%r12\n\t"  // r12 = size1
+      "sall $2,%%r12d\n\t"  // r12=4*size1
+     // "add %%r12,%%r8\n\t"   //r8 is data
+      "add $2112, %%r8\n\t" // r8 is data
+      "mov %%r8,%%r9\n\t"    // r9 = data
+     // "mov %%rdx,%%r12\n\t"  //r12 = size2
+    //  "sall $2,%%r12d\n\t"  //r12=r12*4
+      "add $16384,%%r9\n\t"  //r9 is now permu
+      "mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis1_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis1_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis1_%=\n\t"
+      "endloop_dis1_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis2_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis2_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis2_%=\n\t"
+      "endloop_dis2_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis3_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis3_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis3_%=\n\t"
+      "endloop_dis3_%=:\n\t"
+      "add $4032,%%r9\n\t" 
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis4_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis4_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis4_%=\n\t"
+      "endloop_dis4_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis5_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis5_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis5_%=\n\t"
+      "endloop_dis5_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis6_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis6_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis6_%=\n\t"
+      "endloop_dis6_%=:\n\t"
+      "add $4032,%%r9\n\t"
+      "add $4032,%%r8\n\t" 
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis7_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis7_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis7_%=\n\t"
+      "endloop_dis7_%=:\n\t"
+      "add $4032,%%r9\n\t"
+"mov $0,%%eax\n\t"  //eax = 0
+      "loop_dis8_%=:\n\t"
+      "cmpl $8,%%eax\n\t"
+      "jge endloop_dis8_%=\n\t"
+      "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
+      "mov %%rdi,%%r10\n\t"  // r10 is now txmem
+      "add %%r11,%%r10\n\t"  // r10 is now pointer address 
+      "mov (%%r10),%%r11d\n\t"  // pos -> r11
+      "mov %%r10,%%r12\n\t"  // r12  is now pointer adddress
+      "add %%r11,%%r10\n\t"   // r10 is now target data address
+      "add $4,%%r10\n\t"   // r10 is now target data address
+      "movl (%%r8),%%r11d\n\t"  // r11 is data
+      "movl %%r11d, 4(%%r10)\n\t"  //assign data 
+      "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
+      "movl %%r11d, (%%r10)\n\t"  //assign perm 
+      "movl (%%r12),%%r11d\n\t"  // r11d is pointer address
+      "addl $8,%%r11d\n\t"   //increment
+      "movl %%r11d,(%%r12)\n\t"  // write offset back
+      "addl $1,%%eax\n\t"  //increment
+      "add $4,%%r8\n\t"   //increment
+      "add $8,%%r9\n\t"  //increment
+      "jmp loop_dis8_%=\n\t"
+      "endloop_dis8_%=:\n\t":::);
+}
+
 __attribute__ ((always_inline)) void app_distribute2(){
   __asm__( "mov %%rdi,%%r8\n\t"  //r8 = txmem
       "mov %%rsi,%%r12\n\t"  // r12 = size1
@@ -261,7 +985,113 @@ matrix_prepare_bsort(int32_t* data, int32_t data_init, int32_t data_size, int32_
   *size_p = 2*SqrtN*BLOWUPFACTOR;
 }
 
+void
+memsetup_distribute4(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
+  int start = 0;
+  int pos_data = 0;
+  int pos_perm = 0;
+  memset(g_tx_dis_mem,0,sizeof(int32_t)*12*1024); 
+  for (int i=0;i<SqrtN/16;i++){
+    for (int j=0;j<16;j++){
+      g_tx_dis_mem[start] = 0;
+      for (int k=1;k<2*BLOWUPFACTOR+1;k++)
+        g_tx_dis_mem[start+j*(2*BLOWUPFACTOR+1)+k]=-1;
+    }
+    start += 1024;
+  }
+  start = (2*BLOWUPFACTOR+1)*16;
+  for (int i=0;i<SqrtN/16;i++){
+    for (int j=0;j<16;j++) {
+      g_tx_dis_mem[start+j] = M_data[SqrtN*M_data_init+pos_data++];
+    }
+    start += 1024;
+  }
+  for (int i=0; i< SqrtN/8; i++) {
+    for (int j=0; j<8; j++) {
+      int cur  = M_perm[SqrtN*M_perm_init+pos_perm++];
+      int off = 4*(2*BLOWUPFACTOR+1)*((cur/SqrtN)%16) + ((cur/SqrtN)/16)*4096;
+      g_tx_dis_mem[start+j*2] = off;
+      g_tx_dis_mem[start+j*2+1] = cur;
+    }
+    start += 1024;
+  }
+  * txmem_p = g_tx_dis_mem;
+  * size_p = 12*1024;
+}
 
+void
+memsetup_distribute2(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
+  int start = 0;
+  int rack = 0;
+  int pos_data = 0;
+  int pos_perm = 0;
+  for (int i=0;i<SqrtN/16;i++){
+    rack = 0;
+    for (int j=0;j<16;j++){
+        g_tx_dis_mem[start+rack] = 0;
+        for (int k=1;k<2*BLOWUPFACTOR+1;k++)
+          g_tx_dis_mem[start+rack+k]=-1;
+        rack+=2*BLOWUPFACTOR+1;
+    }
+    for (int j=0;j<16;j++){
+        g_tx_dis_mem[start+rack+j]=M_data[SqrtN*M_data_init+pos_data++];
+  }
+    rack += 16;
+    for (int j=0;j<16;j++) {
+      int cur  = M_perm[SqrtN*M_perm_init+pos_perm++];
+      int off = 4*(2*BLOWUPFACTOR+1)*((cur/SqrtN)%16) + ((cur/SqrtN)/16)*4096;
+      g_tx_dis_mem[start+rack+j*2] = off;
+      g_tx_dis_mem[start+rack+j*2+1] = cur;
+    }
+    start += 1024;
+  }
+
+  * txmem_p = g_tx_dis_mem;
+  * size_p = (SqrtN/16)*1024;
+
+}
+
+void
+memsetup_distribute1(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
+  for (int i=0;i<2*BLOWUPFACTOR*SqrtN+4*SqrtN;i++)
+    g_tx_dis_mem[i] = -1;
+  for (int i=0;i<SqrtN;i++)
+    g_tx_dis_mem[i*(2*BLOWUPFACTOR+1)]=0; 
+  int start = 2*BLOWUPFACTOR*SqrtN+SqrtN;
+  for (int i=0;i<SqrtN;i++)
+    g_tx_dis_mem[start+i] = M_data[SqrtN*M_data_init+i];
+  for (int i=0;i<SqrtN;i++) {
+      int cur  = M_perm[SqrtN*M_perm_init+i];
+      int off = 4*(2*BLOWUPFACTOR+1)*(cur/SqrtN);
+      g_tx_dis_mem[start+SqrtN+i*2] = off;
+      g_tx_dis_mem[start+SqrtN+i*2+1] = cur;
+  }
+
+  //for (int i=0;i<16;i++)
+  //  g_tx_dis_mem[start+1024+i] = M_data[SqrtN*M_data_init+i];
+  start = start + 1024;
+  int pos =0;
+  for (int i=0;i<SqrtN/16;i++){
+    for (int j=0;j<16;j++){
+      g_tx_dis_mem[start+j] = M_data[SqrtN*M_data_init+pos++];
+    }
+    start += 1024;
+  }
+
+  pos = 0;
+  for (int i=0;i<SqrtN/8;i++){
+    for (int j=0;j<8;j++){
+      int cur  = M_perm[SqrtN*M_perm_init+pos++];
+      int off = 4*(2*BLOWUPFACTOR+1)*(cur/SqrtN);
+      g_tx_dis_mem[start+j*2] = off;
+      g_tx_dis_mem[start+j*2+1] = cur;
+    }
+    start += 1024;
+  }
+  * txmem_p = g_tx_dis_mem;
+  * size_p = 4*SqrtN + 2*SqrtN*BLOWUPFACTOR;
+
+}
 void
 memsetup_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size, int32_t** txmem_p, int32_t* size_p){
   static int32_t txmem[4*SqrtN+2*BLOWUPFACTOR*SqrtN];
@@ -393,14 +1223,64 @@ int32_t*  apptxs_cleanup_msort(int32_t* data, int32_t data_init, int32_t data_si
   int32_t* swap;
   for(int stride=2;stride<data_size;stride*=2) {
     for(int j=0; j<data_size; j+=2*stride) {
-        apptx_merge(output+j,input+j,input+j+stride,stride); }
-      //c_merge(output+j,input+j,input+j+stride,stride);}
+        //apptx_merge(output+j,input+j,input+j+stride,stride); }
+        c_merge(output+j,input+j,input+j+stride,stride);}
   swap = input;
   input = output;
   output = swap;
 }
 return input;
 }
+
+void apptx_distribute64d2(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
+  int32_t* txmem;
+  int32_t* txmem1;
+  int32_t txmem_size;
+  g_starts++;
+  memsetup_distribute4(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem1, &txmem_size);
+ // memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init, M_output, M_output_init, M_output_size, &txmem, &txmem_size);
+   
+  /*for (int i=0;i<2112;i++) {
+    int index = (i/33)/16*1024 + ((i/33)%16)*33 + i%33;
+    if (txmem[i]!= txmem1[index])
+        EPrintf("memsetup wrong!\n");    
+  }
+  for (int i=2112;i<2176;i++) {
+    int index = (i-2112)/16*1024 + (i-2112)%16 + 528;
+    if (txmem[i]!= txmem1[index])
+        EPrintf("memsetup wrong!\n");    
+  }
+  for (int i=2176;i<2304;i++) {
+    int index = (i-2176)/16*1024 + 4*1024 + (i-2176)%16 + 528;
+    if (i%2==1 && txmem[i]!= txmem1[index])
+        EPrintf("memsetup wrong!\n");    
+  }*/
+  contextsave();
+  txbegin64d2(txmem1, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
+  app_distribute64d2();
+  txend1();
+  //txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
+  //app_distribute2();
+  //txend();
+//  for(int i=0;i<2*BLOWUPFACTOR*SqrtN+SqrtN;i++) {
+ //       EPrintf("txmem[%d]=%d\n",i,txmem[i]);
+  //}
+  static int count=0;
+  count++;
+  //for(int i=0;i<1024*4;i++) {
+   //     EPrintf("txmem1[%d]=%d\n",i,txmem1[i]);
+  //}
+  for(int i=0;i<SqrtN;i++)
+    for(int j=0;j<2*BLOWUPFACTOR;j++) {
+      int index = (i/16)*1024 + (i%16)*(2*BLOWUPFACTOR+1)+j+1;
+      int index1 = i*(2*BLOWUPFACTOR+1)+j+1;
+     // if (txmem[i*(2*BLOWUPFACTOR+1)+j+1]!=txmem1[index])
+      //    EPrintf("app_distribute 5 is wrong and i=%d,j=%d, txmem[%d]=%d, and txmem1[%d]=%d\n",i,j,index1,txmem[index1],index,txmem1[index]);
+      M_output[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] = txmem1[index]; 
+     // M_output[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] = txmem[i*(2*BLOWUPFACTOR+1)+j+1]; 
+    }
+}
+
 
 void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t  M_data_size, int32_t* M_perm, int32_t M_perm_init, int32_t* M_output, int32_t M_output_init, int32_t M_output_size){
   int32_t* txmem;
@@ -467,6 +1347,12 @@ int verify(int32_t* data, int32_t* perm, int32_t* output)
   return 0;
 }
 
+
+int compare (const void * a, const void * b)
+{
+  return ( *(int*)a - *(int*)b );
+}
+
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
  */
@@ -479,6 +1365,8 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
+  long sec_begin[1],sec_end[1],usec_begin[1],usec_end[1];
+  ocall_gettimenow(sec_begin,usec_begin); 
   while(1) {
     genRandom(M_random);
 
@@ -489,23 +1377,21 @@ int ecall_foo(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
       continue;
     }
     for (int i = 0; i < SqrtN; i++){
+      //apptx_distribute64d2(M_perm,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
       apptx_distribute(M_perm,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
-
-/* unit test */
-//testMergeSort(); 
+    /* unit test */
+    //testMergeSort(); 
 
     int pos = 0;
     for (int j = 0; j < SqrtN; j++){
       int32_t* ret = apptxs_cleanup_msort(g_scratch,j,2*SqrtN*BLOWUPFACTOR);
       for (int i=0;i<2*SqrtN*BLOWUPFACTOR-1;i+=2)
-        if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
+       if (ret[i]!=-1) {M_rr[pos] = ret[i+1]; pos++;}
     }
-
-//debug
-int aPoint = verify(M_perm,M_random,M_rr);
-if(!aPoint) EPrintf("distrbute correct!\n");
-else EPrintf("distribute Wrong\n");
+    int aPoint = verify(M_perm,M_random,M_rr);
+    if(!aPoint) EPrintf("distrbute correct!\n");
+    else EPrintf("distribute Wrong\n");
 
     if(checkOFlow(M_rr)) {
       EPrintf("pi_r overflow\n");
@@ -514,6 +1400,7 @@ else EPrintf("distribute Wrong\n");
 
     // shuffle pass 2  Dr = shuffle(D,R);
     for (int i = 0; i < SqrtN; i++){
+      //apptx_distribute64d2(M_data,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
       apptx_distribute(M_data,i,SqrtN,M_random,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
     pos = 0;
@@ -525,6 +1412,7 @@ else EPrintf("distribute Wrong\n");
 
     // shuffle pass 3   O = shuffle(Dr,PiR)
     for (int i = 0; i < SqrtN; i++){
+      //apptx_distribute64d2(M_dr,i,SqrtN,M_rr,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
       apptx_distribute(M_dr,i,SqrtN,M_rr,i,g_scratch,i,SqrtN*BLOWUPFACTOR);
     }
     pos = 0;
@@ -535,6 +1423,13 @@ else EPrintf("distribute Wrong\n");
     }
     break;
   }
+
+  ocall_gettimenow(sec_end,usec_end); 
+  long t1 = (sec_end[0]-sec_begin[0])*1000000 + (usec_end[0]-usec_begin[0]);
+  qsort (M_output, N, sizeof(int), compare);
+  ocall_gettimenow(sec_end,usec_end); 
+  long t2 = (sec_end[0]-sec_begin[0])*1000000 + (usec_end[0]-usec_begin[0]);
+  EPrintf("t1=%ld and t2=%ld\n",t1,t2);
   return 0;
 }
 

@@ -17,6 +17,19 @@
 #include <sched.h>
 #define SIZE_MASK 0xfff
 #define WAYS_MASK 0xffc00000
+
+
+void gettimenow(long sec[1], long usec[1]){
+    struct timeval now;
+    gettimeofday(&now,NULL);
+    sec[0]=now.tv_sec;
+    usec[0]=now.tv_usec;
+}
+
+void ocall_gettimenow(long sec[1], long usec[1]){
+    gettimenow(sec, usec);
+}
+
 void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
   __asm__(
       "mov %4,%%eax\n\t"
@@ -334,8 +347,9 @@ int SGX_CDECL main(int argc, char *argv[])
   gettimeofday(&end,NULL);
   for(int i=0;i<N;i++)
       M_sim_output[M_perm[i]] = M_data[i];
-  for(int i=0;i<N;i++)
+  for(int i=0;i<N;i++) {
       if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
+  }
   printf("final result right\n");
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);

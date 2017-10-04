@@ -22,6 +22,7 @@ enclave {
     untrusted {
         /*can't use pointer, instead one-element array */
         void ocall_bar([in, string] const char *str, [out] int ret[1]); 
+        void ocall_gettimenow([out] long sec[1], [out] long usec[1]); 
     };
 
 };
