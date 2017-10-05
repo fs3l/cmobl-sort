@@ -39,12 +39,10 @@ tmp_versions/
 modules.order
 *.symvers
 
-app
 **/*_t.c
 **/*_t.h
 **/*_u.c
-**/*_u.h 
+**/*_u.h
 
-.*
-!/.gitignore
 *.dat
+app.out

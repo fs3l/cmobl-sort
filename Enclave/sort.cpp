@@ -4,16 +4,16 @@
   10/04/2017
 */
 
-
-
 #include <math.h>
+#include <sgx_trts.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "sgx_trts.h"
+
+#include "./sort.h"
 
 #define C 4
 
-int EPrintf(const char *fmt, ...);
+int EPrintf(const char* fmt, ...);
 void print_arr(const int* arr, const int len);
 
 struct queue_s {
@@ -147,16 +147,14 @@ void merge_sort(const int* arr_in, int* arr_out, const int len)
 }
 
 int* init_arr(const int len) { return (int*)malloc(sizeof(int) * len); }
-
 int* random_arr(const int len)
 {
-
     unsigned int rand_result;
-    sgx_read_rand((unsigned char*)&rand_result,4);
+    sgx_read_rand((unsigned char*)&rand_result, 4);
     int* out = init_arr(len);
     int i;
     for (i = 0; i < len; ++i) {
-        sgx_read_rand((unsigned char*)&rand_result,4);
+        sgx_read_rand((unsigned char*)&rand_result, 4);
         out[i] = rand_result % 10000;
     }
     return out;
