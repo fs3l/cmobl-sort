@@ -46,19 +46,15 @@ void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
       );
 }
 
-int ecall_foo1(long M_data, long M_perm, long M_output, int c_size)
+int ecall_shuffle_wrapper(long M_data, long M_perm, long M_output, int c_size)
 {
   sgx_status_t ret = SGX_ERROR_UNEXPECTED;
   int retval;
-  ret = ecall_foo(global_eid, &retval, M_data, M_perm, M_output, c_size);
+  ret = ecall_shuffle(global_eid, &retval, M_data, M_perm, M_output, c_size);
 
   if (ret != SGX_SUCCESS)
     abort();
 
-  int cpuid[4] = {0x1, 0x0, 0x0, 0x0};
-  ret = ecall_sgx_cpuid(global_eid, cpuid, 0x0);
-  if (ret != SGX_SUCCESS)
-    abort();
   return retval;
 }
 
@@ -343,13 +339,13 @@ int SGX_CDECL main(int argc, char *argv[])
   permutation_generate(M_perm, N);
   struct timeval start,end;
   gettimeofday(&start,NULL);
-  retval=ecall_foo1((long)M_data, (long)M_perm, (long)M_output, c_size);
+  retval=ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
   gettimeofday(&end,NULL);
-  for(int i=0;i<N;i++)
+  /*for(int i=0;i<N;i++)
       M_sim_output[M_perm[i]] = M_data[i];
   for(int i=0;i<N;i++) {
       if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
-  }
+  }*/
   printf("final result right\n");
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
