@@ -96,7 +96,7 @@ else
 	Crypto_Library_Name := sgx_tcrypto
 endif
 
-Enclave_Cpp_Files := Enclave/Enclave2.cpp Enclave/melshuffle.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
+Enclave_Cpp_Files := Enclave/Enclave2.cpp Enclave/melshuffle.cpp Enclave/sort.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
 Enclave_Asm_Files := Enclave/cpu_compute.s Enclave/abort_handling.s Enclave/exp.s Enclave/exp_cachemiss.s Enclave/tx_begin.s Enclave/tx_end.s
 Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport
 

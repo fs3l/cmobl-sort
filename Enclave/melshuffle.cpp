@@ -1,3 +1,10 @@
+/*
+  Author: Ju Chen 
+  10/04/2017  
+*/
+
+
+
 #include <stdarg.h>
 #include <stdio.h>      /* vsnprintf */
 

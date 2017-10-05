@@ -9,7 +9,7 @@
 #include "Enclave_t.h"  /* bar*/
 
 int melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size, int input_size);
-
+int sort(int len);
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -31,7 +31,8 @@ int EPrintf(const char *fmt, ...)
  */
 int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size)
 {
-  melshuffle(M_data_ref,M_perm_ref,M_output_ref,c_size,N);
+//  melshuffle(M_data_ref,M_perm_ref,M_output_ref,c_size,N);
+  sort(10);
 }
 
 /* ecall_sgx_cpuid:
