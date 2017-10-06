@@ -759,6 +759,22 @@ __attribute__((always_inline)) inline void app_distribute64d2()
             :);
 }
 
+__attribute__((always_inline)) inline void app_distribute_c(int32_t* txmem, int size1, int size2){
+  int32_t off  = 0;
+  int32_t perm = 0;
+  int32_t data = 0;
+  for(int i=0;i<size2;i++) {
+      data = txmem[size1+i];
+      off = txmem[size1+size2+i*2]/4;
+      perm = txmem[size1+size2+i*2+1];
+      txmem[off+1+txmem[off]/4] = perm;
+      txmem[off+1+txmem[off]/4+1] = data;
+      txmem[off] += 8;
+  }
+}
+
+
+
 __attribute__((always_inline)) inline void app_distribute2()
 {
     __asm__(
@@ -1157,7 +1173,8 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
                         &txmem_size);
     contextsave();
     txbegin(txmem, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
-    app_distribute2();
+    //app_distribute2();
+    app_distribute_c(txmem,2*BLOWUPFACTOR*SqrtN+SqrtN,M_data_size);
     txend();
     for (int i = 0; i < SqrtN; i++)
         for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
@@ -1228,11 +1245,11 @@ int melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size,
         return 0;
 
     // method selection
-    if (input_size == 128 * 128) {
-        distribute_method = apptx_distribute128d2;
-    } else if (input_size == 64 * 64) {
-        distribute_method = apptx_distribute64d2;
-    } else
+   // if (input_size == 128 * 128) {
+   //     distribute_method = apptx_distribute128d2;
+   // } else if (input_size == 64 * 64) {
+   //     distribute_method = apptx_distribute64d2;
+   // } else
         distribute_method = apptx_distribute;
 
     int32_t* M_data = (int32_t*)M_data_ref;
