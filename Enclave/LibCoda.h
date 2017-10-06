@@ -12,6 +12,9 @@ extern int g_starts;
 extern int g_finishes;
 extern int32_t cache_size;
 
+
+
+
 __attribute__((always_inline)) inline void txbegin128d2(int32_t* txmem,
                                                         int32_t nob_size,
                                                         int32_t ob_size)
