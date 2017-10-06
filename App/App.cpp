@@ -212,17 +212,11 @@ void permutation_generate(int *permutation, int n)
 int SGX_CDECL main(int argc, char *argv[])
 {
     /* Initialize the enclave */
-    printf("a\n");
     if (initialize_enclave() < 0) {
         printf("Error enclave and exit\n");
         return -1;
     }
-    printf("b\n");
 
-    /* Utilize edger8r attributes */
-    edger8r_function_attributes();
-
-    printf("c\n");
     /* Utilize trusted libraries */
     int retval;
 

@@ -16,7 +16,6 @@
 #include "./LibCoda.h"
 #include "./melshuffle.h"
 
-int EPrintf(const char* fmt, ...);
 uint64_t gContext[100];
 int32_t g_scratch[2 * BLOWUPFACTOR * N];
 // debug

@@ -24,7 +24,7 @@ extern "C" {
 //#define BLOWUPFACTOR NBITS(N) //TODO blowupfactor = lg(N) ?
 //#define BLOWUPFACTOR 2*log(N)
 
-int bar1(const char *fmt, ...);
+int EPrintf(const char *fmt, ...);
 
 #if defined(__cplusplus)
 }

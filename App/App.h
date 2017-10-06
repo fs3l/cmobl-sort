@@ -26,9 +26,6 @@ extern sgx_enclave_id_t global_eid; /* global enclave id */
 extern "C" {
 #endif
 
-void edger8r_function_attributes(void);
-
-int ecall_bar(int);
 
 #if defined(__cplusplus)
 }

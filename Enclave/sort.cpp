@@ -10,10 +10,10 @@
 #include <stdlib.h>
 
 #include "./sort.h"
+#include "./Enclave.h"
 
 #define C 4
 
-int EPrintf(const char* fmt, ...);
 void print_arr(const int* arr, const int len);
 
 struct queue_s {

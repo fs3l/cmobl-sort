@@ -10,8 +10,6 @@ enclave {
      *  [*]: implies to import all functions.
      */
 
-    from "Edger8rSyntax/Functions.edl" import *;
-
     from "Libc.edl" import *;
 
     /*
