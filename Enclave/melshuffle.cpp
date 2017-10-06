@@ -29,14 +29,6 @@ int32_t g_tx_dis_mem128[24 * 1024] __attribute__((aligned(64)));
 
 void (*distribute_method)(int32_t*, int32_t, int32_t, int32_t*, int32_t,
                           int32_t*, int32_t, int32_t);
-void copy_E_M(int32_t* M_data, int32_t* M_perm, int32_t* E_data,
-              int32_t* E_perm)
-{
-    memcpy(E_data, M_data, N * sizeof(int32_t));
-    memcpy(E_perm, M_perm, N * sizeof(int32_t));
-    // TODO
-}
-
 extern "C" {
 int asm_cache_hit_simulate(int32_t* data, int32_t size1);
 int asm_cache_miss_simulate(int32_t* data, int32_t size1);
@@ -152,241 +144,6 @@ pos perm pos perm ... ... pos perm
 
  */
 
-__attribute__((always_inline)) inline void app_distribute5()
-{
-    __asm__(
-        "mov %%rdi,%%r8\n\t"   // r8 = txmem
-        "mov %%rsi,%%r12\n\t"  // r12 = size1
-        "sall $2,%%r12d\n\t"   // r12=4*size1
-        "add $2112,%%r8\n\t"   // r8 is data
-        "mov %%r8,%%r9\n\t"    // r9 = data
-        "mov %%rdx,%%r12\n\t"  // r12 = size2
-        "sall $2,%%r12d\n\t"   // r12=r12*4
-        "add $64,%%r9\n\t"     // r9 is now permu
-        "mov $0,%%eax\n\t"     // eax = 0
-        "loop_dis_%=:\n\t"
-        "cmpl $16,%%eax\n\t"
-        "jge endloop_dis_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"     // offset[i] -> r11
-        "mov %%rdi,%%r10\n\t"        // r10 is now txmem
-        "add %%r11,%%r10\n\t"        // r10 is now pointer address
-        "mov (%%r10),%%r11d\n\t"     // pos -> r11
-        "mov %%r10,%%r12\n\t"        // r12  is now pointer adddress
-        "add %%r11,%%r10\n\t"        // r10 is now target data address
-        "add $4,%%r10\n\t"           // r10 is now target data address
-        "movl (%%r8),%%r11d\n\t"     // r11 is data
-        "movl %%r11d, 4(%%r10)\n\t"  // assign data
-        "movl 4(%%r9),%%r11d\n\t"    // r11 is perm
-        "movl %%r11d, (%%r10)\n\t"   // assign perm
-        "movl (%%r12),%%r11d\n\t"    // r11d is pointer address
-        "addl $8,%%r11d\n\t"         // increment
-        "movl %%r11d,(%%r12)\n\t"    // write offset back
-        "addl $1,%%eax\n\t"          // increment
-        "add $4,%%r8\n\t"            // increment
-        "add $8,%%r9\n\t"            // increment
-        "jmp loop_dis_%=\n\t"
-        "endloop_dis_%=:\n\t"
-
-        "add $3968,%%r9\n\t"
-        "add $4032,%%r8\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis2_%=:\n\t"
-        "cmpl $16,%%eax\n\t"
-        "jge endloop_dis2_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"     // offset[i] -> r11
-        "mov %%rdi,%%r10\n\t"        // r10 is now txmem
-        "add %%r11,%%r10\n\t"        // r10 is now pointer address
-        "mov (%%r10),%%r11d\n\t"     // pos -> r11
-        "mov %%r10,%%r12\n\t"        // r12  is now pointer adddress
-        "add %%r11,%%r10\n\t"        // r10 is now target data address
-        "add $4,%%r10\n\t"           // r10 is now target data address
-        "movl (%%r8),%%r11d\n\t"     // r11 is data
-        "movl %%r11d, 4(%%r10)\n\t"  // assign data
-        "movl 4(%%r9),%%r11d\n\t"    // r11 is perm
-        "movl %%r11d, (%%r10)\n\t"   // assign perm
-        "movl (%%r12),%%r11d\n\t"    // r11d is pointer address
-        "addl $8,%%r11d\n\t"         // increment
-        "movl %%r11d,(%%r12)\n\t"    // write offset back
-        "addl $1,%%eax\n\t"          // increment
-        "add $4,%%r8\n\t"            // increment
-        "add $8,%%r9\n\t"            // increment
-        "jmp loop_dis2_%=\n\t"
-        "endloop_dis2_%=:\n\t"
-
-        "add $3968,%%r9\n\t"
-        "add $4032,%%r8\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis3_%=:\n\t"
-        "cmpl $16,%%eax\n\t"
-        "jge endloop_dis3_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"     // offset[i] -> r11
-        "mov %%rdi,%%r10\n\t"        // r10 is now txmem
-        "add %%r11,%%r10\n\t"        // r10 is now pointer address
-        "mov (%%r10),%%r11d\n\t"     // pos -> r11
-        "mov %%r10,%%r12\n\t"        // r12  is now pointer adddress
-        "add %%r11,%%r10\n\t"        // r10 is now target data address
-        "add $4,%%r10\n\t"           // r10 is now target data address
-        "movl (%%r8),%%r11d\n\t"     // r11 is data
-        "movl %%r11d, 4(%%r10)\n\t"  // assign data
-        "movl 4(%%r9),%%r11d\n\t"    // r11 is perm
-        "movl %%r11d, (%%r10)\n\t"   // assign perm
-        "movl (%%r12),%%r11d\n\t"    // r11d is pointer address
-        "addl $8,%%r11d\n\t"         // increment
-        "movl %%r11d,(%%r12)\n\t"    // write offset back
-        "addl $1,%%eax\n\t"          // increment
-        "add $4,%%r8\n\t"            // increment
-        "add $8,%%r9\n\t"            // increment
-        "jmp loop_dis3_%=\n\t"
-        "endloop_dis3_%=:\n\t"
-
-        "add $4032,%%r8\n\t"
-        "add $3968,%%r9\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis4_%=:\n\t"
-        "cmpl $16,%%eax\n\t"
-        "jge endloop_dis4_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"     // offset[i] -> r11
-        "mov %%rdi,%%r10\n\t"        // r10 is now txmem
-        "add %%r11,%%r10\n\t"        // r10 is now pointer address
-        "mov (%%r10),%%r11d\n\t"     // pos -> r11
-        "mov %%r10,%%r12\n\t"        // r12  is now pointer adddress
-        "add %%r11,%%r10\n\t"        // r10 is now target data address
-        "add $4,%%r10\n\t"           // r10 is now target data address
-        "movl (%%r8),%%r11d\n\t"     // r11 is data
-        "movl %%r11d, 4(%%r10)\n\t"  // assign data
-        "movl 4(%%r9),%%r11d\n\t"    // r11 is perm
-        "movl %%r11d, (%%r10)\n\t"   // assign perm
-        "movl (%%r12),%%r11d\n\t"    // r11d is pointer address
-        "addl $8,%%r11d\n\t"         // increment
-        "movl %%r11d,(%%r12)\n\t"    // write offset back
-        "addl $1,%%eax\n\t"          // increment
-        "add $4,%%r8\n\t"            // increment
-        "add $8,%%r9\n\t"            // increment
-        "jmp loop_dis4_%=\n\t"
-        "endloop_dis4_%=:\n\t" ::
-            :);
-}
-
-__attribute__((always_inline)) inline void app_distribute4()
-{
-    __asm__(
-        "mov %%rdi,%%r8\n\t"   // r8 = txmem
-        "mov %%rsi,%%r12\n\t"  // r12 = size1
-        "sall $2,%%r12d\n\t"   // r12=4*size1
-        "add %%r12,%%r8\n\t"   // r8 is data
-        "add $4096, %%r8\n\t"  // r8 is data
-        "mov %%r8,%%r9\n\t"    // r9 = data
-                               // "mov %%rdx,%%r12\n\t"  //r12 = size2
-                               //  "sall $2,%%r12d\n\t"  //r12=r12*4
-        "add $16384,%%r9\n\t"  // r9 is now permu
-        "mov $0,%%eax\n\t"     // eax = 0
-        "loop_dis1_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis1_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"  // offset[i] -> r11
-        // "movl (%%r8),%%r11d\n\t"  // r11 is data
-        "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $8,%%r9\n\t"          // increment
-        "jmp loop_dis1_%=\n\t"
-        "endloop_dis1_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis2_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis2_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"  // offset[i] -> r11
-        // "movl (%%r8),%%r11d\n\t"  // r11 is data
-        "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $8,%%r9\n\t"          // increment
-        "jmp loop_dis2_%=\n\t"
-        "endloop_dis2_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "add $4032,%%r8\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis3_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis3_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"  // offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $8,%%r9\n\t"          // increment
-        "jmp loop_dis3_%=\n\t"
-        "endloop_dis3_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis4_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis4_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"  // offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $8,%%r9\n\t"          // increment
-        "jmp loop_dis4_%=\n\t"
-        "endloop_dis4_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "add $4032,%%r8\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis5_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis5_%=\n\t"
-        "movl (%%r9),%%r11d\n\t"  // offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $8,%%r9\n\t"          // increment
-        "jmp loop_dis5_%=\n\t"
-        "endloop_dis5_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis6_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis6_%=\n\t"
-        //"movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        // "movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"  // increment
-        "add $4,%%r8\n\t"    // increment
-        "add $8,%%r9\n\t"    // increment
-        "jmp loop_dis6_%=\n\t"
-        "endloop_dis6_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "add $4032,%%r8\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis7_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis7_%=\n\t"
-        // "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        //"movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"  // increment
-        "add $4,%%r8\n\t"    // increment
-        "add $8,%%r9\n\t"    // increment
-        "jmp loop_dis7_%=\n\t"
-        "endloop_dis7_%=:\n\t"
-        "add $4032,%%r9\n\t"
-        "mov $0,%%eax\n\t"  // eax = 0
-        "loop_dis8_%=:\n\t"
-        "cmpl $8,%%eax\n\t"
-        "jge endloop_dis8_%=\n\t"
-        // "movl (%%r9),%%r11d\n\t"  //offset[i] -> r11
-        //  "movl (%%r8),%%r11d\n\t"  // r11 is data
-        //"movl 4(%%r9),%%r11d\n\t"  // r11 is perm
-        "addl $1,%%eax\n\t"  // increment
-        "add $4,%%r8\n\t"    // increment
-        "add $8,%%r9\n\t"    // increment
-        "jmp loop_dis8_%=\n\t"
-        "endloop_dis8_%=:\n\t" ::
-            :);
-}
 
 __attribute__((always_inline)) inline void app_distribute128d2()
 {
@@ -1039,11 +796,6 @@ __attribute__((always_inline)) inline void app_distribute2()
             :);
 }
 
-void copy_M_E(int32_t* E_output, int32_t* M_output)
-{
-    memcpy(M_output, E_output, N * sizeof(int32_t));
-}
-
 int32_t E_data[N];
 int32_t E_perm[N];
 int32_t E_output[N * BLOWUPFACTOR];
@@ -1187,50 +939,7 @@ void memsetup_distribute2(int32_t* M_data, int32_t M_data_init,
     *size_p = (SqrtN / 16) * 1024;
 }
 
-void memsetup_distribute1(int32_t* M_data, int32_t M_data_init,
-                          int32_t M_data_size, int32_t* M_perm,
-                          int32_t M_perm_init, int32_t* M_output,
-                          int32_t M_output_init, int32_t M_output_size,
-                          int32_t** txmem_p, int32_t* size_p)
-{
-    for (int i = 0; i < 2 * BLOWUPFACTOR * SqrtN + 4 * SqrtN; i++)
-        g_tx_dis_mem[i] = -1;
-    for (int i = 0; i < SqrtN; i++)
-        g_tx_dis_mem[i * (2 * BLOWUPFACTOR + 1)] = 0;
-    int start = 2 * BLOWUPFACTOR * SqrtN + SqrtN;
-    for (int i = 0; i < SqrtN; i++)
-        g_tx_dis_mem[start + i] = M_data[SqrtN * M_data_init + i];
-    for (int i = 0; i < SqrtN; i++) {
-        int cur = M_perm[SqrtN * M_perm_init + i];
-        int off = 4 * (2 * BLOWUPFACTOR + 1) * (cur / SqrtN);
-        g_tx_dis_mem[start + SqrtN + i * 2] = off;
-        g_tx_dis_mem[start + SqrtN + i * 2 + 1] = cur;
-    }
 
-    // for (int i=0;i<16;i++)
-    //  g_tx_dis_mem[start+1024+i] = M_data[SqrtN*M_data_init+i];
-    start = start + 1024;
-    int pos = 0;
-    for (int i = 0; i < SqrtN / 16; i++) {
-        for (int j = 0; j < 16; j++) {
-            g_tx_dis_mem[start + j] = M_data[SqrtN * M_data_init + pos++];
-        }
-        start += 1024;
-    }
-
-    pos = 0;
-    for (int i = 0; i < SqrtN / 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            int cur = M_perm[SqrtN * M_perm_init + pos++];
-            int off = 4 * (2 * BLOWUPFACTOR + 1) * (cur / SqrtN);
-            g_tx_dis_mem[start + j * 2] = off;
-            g_tx_dis_mem[start + j * 2 + 1] = cur;
-        }
-        start += 1024;
-    }
-    *txmem_p = g_tx_dis_mem;
-    *size_p = 4 * SqrtN + 2 * SqrtN * BLOWUPFACTOR;
-}
 void memsetup_distribute(int32_t* M_data, int32_t M_data_init,
                          int32_t M_data_size, int32_t* M_perm,
                          int32_t M_perm_init, int32_t* M_output,
@@ -1348,7 +1057,6 @@ void apptx_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
 {
     g_starts++;
     int32_t otmem[4 * stride] __attribute__((aligned(64)));
-    // int32_t otmem[4*stride];
     memset(otmem, 0, 4 * stride * sizeof(int32_t));
     contextsave();
     // memsetup
@@ -1356,18 +1064,6 @@ void apptx_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
     for (int q = 0; q < stride; q++) otmem[q + 3 * stride] = src2[q];
     txbegin(otmem, 2 * stride, stride);
     app_merge();
-    /* int i = 0;
-       int j= 0;
-       int k= 0;
-       while (i<stride && j<stride) {
-       if (tx_mem[2*stride+i] < tx_mem[3*stride+j])
-       {tx_mem[k]=tx_mem[2*stride+i];i++;}
-       else {tx_mem[k]=tx_mem[3*stride+j];j++;}
-       k++;
-       }
-       while (i<stride) {tx_mem[k]=tx_mem[2*stride+i];i++;k++;}
-       while (j<stride) {tx_mem[k]=tx_mem[3*stride+j];j++;k++;}
-     */
     txend();
     for (int p = 0; p < 2 * stride; p++) {
         dst[p] = otmem[p];
@@ -1398,127 +1094,55 @@ int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
 }
 
 void apptx_distribute128d2(int32_t* M_data, int32_t M_data_init,
-                           int32_t M_data_size, int32_t* M_perm,
-                           int32_t M_perm_init, int32_t* M_output,
-                           int32_t M_output_init, int32_t M_output_size)
+    int32_t M_data_size, int32_t* M_perm,
+    int32_t M_perm_init, int32_t* M_output,
+    int32_t M_output_init, int32_t M_output_size)
 {
-    int32_t* txmem;
-    int32_t* txmem1;
-    int32_t txmem_size;
-    g_starts++;
-    memsetup_distribute128d2(M_data, M_data_init, M_data_size, M_perm,
-                             M_perm_init, M_output, M_output_init,
-                             M_output_size, &txmem1, &txmem_size);
-    // memsetup_distribute(M_data, M_data_init, M_data_size, M_perm,
-    // M_perm_init, M_output, M_output_init, M_output_size, &txmem,
-    // &txmem_size);
-
-    /*for (int i=0;i<2112;i++) {
-      int index = (i/33)/16*1024 + ((i/33)%16)*33 + i%33;
-      if (txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
+  int32_t* txmem;
+  int32_t* txmem1;
+  int32_t txmem_size;
+  g_starts++;
+  memsetup_distribute128d2(M_data, M_data_init, M_data_size, M_perm,
+      M_perm_init, M_output, M_output_init,
+      M_output_size, &txmem1, &txmem_size);
+  contextsave();
+  txbegin128d2(txmem1, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
+  app_distribute128d2();
+  txend();
+  for (int i = 0; i < SqrtN; i++)
+    for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
+      int index =
+        (i / 16) * 1024 + (i % 16) * (2 * BLOWUPFACTOR + 1) + j + 1;
+      int index1 = i * (2 * BLOWUPFACTOR + 1) + j + 1;
+      M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR +
+        i * 2 * BLOWUPFACTOR + j] = txmem1[index];
     }
-    for (int i=2112;i<2176;i++) {
-      int index = (i-2112)/16*1024 + (i-2112)%16 + 528;
-      if (txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
-    }
-    for (int i=2176;i<2304;i++) {
-      int index = (i-2176)/16*1024 + 4*1024 + (i-2176)%16 + 528;
-      if (i%2==1 && txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
-    }*/
-    contextsave();
-    txbegin128d2(txmem1, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
-    app_distribute128d2();
-    txend();
-    // txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
-    // app_distribute2();
-    // txend();
-    //  for(int i=0;i<2*BLOWUPFACTOR*SqrtN+SqrtN;i++) {
-    //       EPrintf("txmem[%d]=%d\n",i,txmem[i]);
-    //}
-    static int count = 0;
-    count++;
-    // for(int i=0;i<1024*4;i++) {
-    //     EPrintf("txmem1[%d]=%d\n",i,txmem1[i]);
-    //}
-    for (int i = 0; i < SqrtN; i++)
-        for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
-            int index =
-                (i / 16) * 1024 + (i % 16) * (2 * BLOWUPFACTOR + 1) + j + 1;
-            int index1 = i * (2 * BLOWUPFACTOR + 1) + j + 1;
-            // if (txmem[i*(2*BLOWUPFACTOR+1)+j+1]!=txmem1[index])
-            //    EPrintf("app_distribute 5 is wrong and i=%d,j=%d,
-            //    txmem[%d]=%d, and
-            //    txmem1[%d]=%d\n",i,j,index1,txmem[index1],index,txmem1[index]);
-            M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR +
-                     i * 2 * BLOWUPFACTOR + j] = txmem1[index];
-            // M_output[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] =
-            // txmem[i*(2*BLOWUPFACTOR+1)+j+1];
-        }
 }
 
 void apptx_distribute64d2(int32_t* M_data, int32_t M_data_init,
-                          int32_t M_data_size, int32_t* M_perm,
-                          int32_t M_perm_init, int32_t* M_output,
-                          int32_t M_output_init, int32_t M_output_size)
+    int32_t M_data_size, int32_t* M_perm,
+    int32_t M_perm_init, int32_t* M_output,
+    int32_t M_output_init, int32_t M_output_size)
 {
-    int32_t* txmem;
-    int32_t* txmem1;
-    int32_t txmem_size;
-    g_starts++;
-    memsetup_distribute64d2(M_data, M_data_init, M_data_size, M_perm,
-                            M_perm_init, M_output, M_output_init, M_output_size,
-                            &txmem1, &txmem_size);
-    // memsetup_distribute(M_data, M_data_init, M_data_size, M_perm,
-    // M_perm_init, M_output, M_output_init, M_output_size, &txmem,
-    // &txmem_size);
-
-    /*for (int i=0;i<2112;i++) {
-      int index = (i/33)/16*1024 + ((i/33)%16)*33 + i%33;
-      if (txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
+  int32_t* txmem;
+  int32_t* txmem1;
+  int32_t txmem_size;
+  g_starts++;
+  memsetup_distribute64d2(M_data, M_data_init, M_data_size, M_perm,
+      M_perm_init, M_output, M_output_init, M_output_size,
+      &txmem1, &txmem_size);
+  contextsave();
+  txbegin64d2(txmem1, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
+  app_distribute64d2();
+  txend();
+  for (int i = 0; i < SqrtN; i++)
+    for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
+      int index =
+        (i / 16) * 1024 + (i % 16) * (2 * BLOWUPFACTOR + 1) + j + 1;
+      int index1 = i * (2 * BLOWUPFACTOR + 1) + j + 1;
+      M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR +
+        i * 2 * BLOWUPFACTOR + j] = txmem1[index];
     }
-    for (int i=2112;i<2176;i++) {
-      int index = (i-2112)/16*1024 + (i-2112)%16 + 528;
-      if (txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
-    }
-    for (int i=2176;i<2304;i++) {
-      int index = (i-2176)/16*1024 + 4*1024 + (i-2176)%16 + 528;
-      if (i%2==1 && txmem[i]!= txmem1[index])
-          EPrintf("memsetup wrong!\n");
-    }*/
-    contextsave();
-    txbegin64d2(txmem1, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
-    app_distribute64d2();
-    txend();
-    // txbegin(txmem, 2*BLOWUPFACTOR*SqrtN+SqrtN, M_data_size);
-    // app_distribute2();
-    // txend();
-    //  for(int i=0;i<2*BLOWUPFACTOR*SqrtN+SqrtN;i++) {
-    //       EPrintf("txmem[%d]=%d\n",i,txmem[i]);
-    //}
-    static int count = 0;
-    count++;
-    // for(int i=0;i<1024*4;i++) {
-    //     EPrintf("txmem1[%d]=%d\n",i,txmem1[i]);
-    //}
-    for (int i = 0; i < SqrtN; i++)
-        for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
-            int index =
-                (i / 16) * 1024 + (i % 16) * (2 * BLOWUPFACTOR + 1) + j + 1;
-            int index1 = i * (2 * BLOWUPFACTOR + 1) + j + 1;
-            // if (txmem[i*(2*BLOWUPFACTOR+1)+j+1]!=txmem1[index])
-            //    EPrintf("app_distribute 5 is wrong and i=%d,j=%d,
-            //    txmem[%d]=%d, and
-            //    txmem1[%d]=%d\n",i,j,index1,txmem[index1],index,txmem1[index]);
-            M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR +
-                     i * 2 * BLOWUPFACTOR + j] = txmem1[index];
-            // M_output[M_output_init*SqrtN*2*BLOWUPFACTOR+i*2*BLOWUPFACTOR+j] =
-            // txmem[i*(2*BLOWUPFACTOR+1)+j+1];
-        }
 }
 
 void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
@@ -1533,7 +1157,6 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
                         &txmem_size);
     contextsave();
     txbegin(txmem, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
-    //    applogic_distribute(txmem, txmem_size);
     app_distribute2();
     txend();
     for (int i = 0; i < SqrtN; i++)
@@ -1701,43 +1324,4 @@ int melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size,
         (sec_end[0] - sec_begin[0]) * 1000000 + (usec_end[0] - usec_begin[0]);
     EPrintf("t_shuffle=%ld and t_shuffle+t_sort=%ld\n", t1, t2);
     return 0;
-}
-
-////////TOREMOVE////////
-
-__attribute__((always_inline)) inline void app_distribute()
-{
-    __asm__(
-        "mov %%rdi,%%r8\n\t"   // r8 = txmem
-        "mov %%rsi,%%r12\n\t"  // r12 = size1
-        "sall $2,%%r12d\n\t"   // r12=4*size1
-        "add %%r12,%%r8\n\t"   // r8 is data
-        "mov %%r8,%%r9\n\t"    // r9 = data
-        "mov %%rdx,%%r12\n\t"  // r12 = size2
-        "sall $2,%%r12d\n\t"   // r12=r12*4
-        "add %%r12,%%r9\n\t"   // r9 is now permu
-        "mov $0,%%eax\n\t"     // eax = 0
-        "loop_dis_%=:\n\t"
-        "cmpl %%edx,%%eax\n\t"
-        "jge endloop_dis_%=\n\t"
-        "movl (%%r8),%%r10d\n\t"   // data[i] -> r10
-        "movl (%%r9),%%r11d\n\t"   // permu[i] -> r11
-        "sall $2,%%r11d\n\t"       // r11 = r11 *4
-        "mov %%rdi,%%rcx\n\t"      // rcx = txmem
-        "add  %%r11,%%rcx\n\t"     // rcx is now output[permu[i]]
-        "movl %%r10d,(%%rcx)\n\t"  // assign value
-        "addl $1,%%eax\n\t"        // increment
-        "add $4,%%r8\n\t"          // increment
-        "add $4,%%r9\n\t"          // increment
-        "jmp loop_dis_%=\n\t"
-        "endloop_dis_%=:\n\t" ::
-            :);
-}
-
-void applogic_distribute(int32_t* txmem, int32_t size)
-{
-    // int tmp[1000];// = new int[1000];
-    // asm_cache_miss_simulate(tmp,1000);
-    // int ret = asm_apptx_distribute(txmem,SqrtN*BLOWUPFACTOR,SqrtN);
-    return;
 }
