@@ -21,49 +21,49 @@
 
 void gettimenow(long sec[1], long usec[1])
 {
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    sec[0] = now.tv_sec;
-    usec[0] = now.tv_usec;
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  sec[0] = now.tv_sec;
+  usec[0] = now.tv_usec;
 }
 
 void ocall_gettimenow(long sec[1], long usec[1]) { gettimenow(sec, usec); }
 void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx)
 {
-    __asm__(
-        "mov %4,%%eax\n\t"
-        "mov %5,%%ecx\n\t"
-        "cpuid\n\t"  //  call cpuid instruction
-        "mov %%eax,%0\n\t"
-        "mov %%ebx,%1\n\t"
-        "mov %%ecx,%2\n\t"
-        "mov %%edx,%3\n\t"
-        //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
-        : "=r"(*eax), "=r"(*ebx), "=r"(*ecx),
-          "=r"(*edx)                      // output equal to "movl  %%eax %1"
-        : "r"(code), "r"(*ecx)            // input equal to "movl %1, %%eax"
-        : "%eax", "%ebx", "%ecx", "%edx"  // clobbered register
-        );
+  __asm__(
+      "mov %4,%%eax\n\t"
+      "mov %5,%%ecx\n\t"
+      "cpuid\n\t"  //  call cpuid instruction
+      "mov %%eax,%0\n\t"
+      "mov %%ebx,%1\n\t"
+      "mov %%ecx,%2\n\t"
+      "mov %%edx,%3\n\t"
+      //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
+      : "=r"(*eax), "=r"(*ebx), "=r"(*ecx),
+        "=r"(*edx)                      // output equal to "movl  %%eax %1"
+      : "r"(code), "r"(*ecx)            // input equal to "movl %1, %%eax"
+      : "%eax", "%ebx", "%ecx", "%edx"  // clobbered register
+      );
 }
 
 int ecall_shuffle_wrapper(long M_data, long M_perm, long M_output, int c_size)
 {
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    int retval;
-    ret = ecall_shuffle(global_eid, &retval, M_data, M_perm, M_output, c_size);
+  sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+  int retval;
+  ret = ecall_shuffle(global_eid, &retval, M_data, M_perm, M_output, c_size);
 
-    if (ret != SGX_SUCCESS) abort();
+  if (ret != SGX_SUCCESS) abort();
 
-    return retval;
+  return retval;
 }
 
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
 
 typedef struct _sgx_errlist_t {
-    sgx_status_t err;
-    const char *msg;
-    const char *sug; /* Suggestion */
+  sgx_status_t err;
+  const char *msg;
+  const char *sug; /* Suggestion */
 } sgx_errlist_t;
 
 /* Error code returned by sgx_create_enclave */
@@ -91,19 +91,19 @@ static sgx_errlist_t sgx_errlist[] = {
 /* Check error conditions for loading enclave */
 void print_error_message(sgx_status_t ret)
 {
-    size_t idx = 0;
-    size_t ttl = sizeof sgx_errlist / sizeof sgx_errlist[0];
+  size_t idx = 0;
+  size_t ttl = sizeof sgx_errlist / sizeof sgx_errlist[0];
 
-    for (idx = 0; idx < ttl; idx++) {
-        if (ret == sgx_errlist[idx].err) {
-            if (NULL != sgx_errlist[idx].sug)
-                printf("Info: %s\n", sgx_errlist[idx].sug);
-            printf("Error: %s\n", sgx_errlist[idx].msg);
-            break;
-        }
+  for (idx = 0; idx < ttl; idx++) {
+    if (ret == sgx_errlist[idx].err) {
+      if (NULL != sgx_errlist[idx].sug)
+        printf("Info: %s\n", sgx_errlist[idx].sug);
+      printf("Error: %s\n", sgx_errlist[idx].msg);
+      break;
     }
+  }
 
-    if (idx == ttl) printf("Error: Unexpected error occurred.\n");
+  if (idx == ttl) printf("Error: Unexpected error occurred.\n");
 }
 
 /* Initialize the enclave:
@@ -113,150 +113,149 @@ void print_error_message(sgx_status_t ret)
  */
 int initialize_enclave(void)
 {
-    char token_path[MAX_PATH] = {'\0'};
-    sgx_launch_token_t token = {0};
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    int updated = 0;
+  char token_path[MAX_PATH] = {'\0'};
+  sgx_launch_token_t token = {0};
+  sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+  int updated = 0;
 
-    /* Step 1: retrive the launch token saved by last transaction */
+  /* Step 1: retrive the launch token saved by last transaction */
 
-    /* __GNUC__ */
-    /* try to get the token saved in $HOME */
-    const char *home_dir = getpwuid(getuid())->pw_dir;
+  /* __GNUC__ */
+  /* try to get the token saved in $HOME */
+  const char *home_dir = getpwuid(getuid())->pw_dir;
 
-    if (home_dir != NULL &&
-        (strlen(home_dir) + strlen("/") + sizeof(TOKEN_FILENAME) + 1) <=
-            MAX_PATH) {
-        /* compose the token path */
-        strncpy(token_path, home_dir, strlen(home_dir));
-        strncat(token_path, "/", strlen("/"));
-        strncat(token_path, TOKEN_FILENAME, sizeof(TOKEN_FILENAME) + 1);
-    } else {
-        /* if token path is too long or $HOME is NULL */
-        strncpy(token_path, TOKEN_FILENAME, sizeof(TOKEN_FILENAME));
+  if (home_dir != NULL &&
+      (strlen(home_dir) + strlen("/") + sizeof(TOKEN_FILENAME) + 1) <=
+          MAX_PATH) {
+    /* compose the token path */
+    strncpy(token_path, home_dir, strlen(home_dir));
+    strncat(token_path, "/", strlen("/"));
+    strncat(token_path, TOKEN_FILENAME, sizeof(TOKEN_FILENAME) + 1);
+  } else {
+    /* if token path is too long or $HOME is NULL */
+    strncpy(token_path, TOKEN_FILENAME, sizeof(TOKEN_FILENAME));
+  }
+
+  FILE *fp = fopen(token_path, "rb");
+  if (fp == NULL && (fp = fopen(token_path, "wb")) == NULL) {
+    printf("Warning: Failed to create/open the launch token file \"%s\".\n",
+           token_path);
+  }
+
+  if (fp != NULL) {
+    /* read the token from saved file */
+    size_t read_num = fread(token, 1, sizeof(sgx_launch_token_t), fp);
+    if (read_num != 0 && read_num != sizeof(sgx_launch_token_t)) {
+      /* if token is invalid, clear the buffer */
+      memset(&token, 0x0, sizeof(sgx_launch_token_t));
+      printf("Warning: Invalid launch token read from \"%s\".\n", token_path);
     }
+  }
 
-    FILE *fp = fopen(token_path, "rb");
-    if (fp == NULL && (fp = fopen(token_path, "wb")) == NULL) {
-        printf("Warning: Failed to create/open the launch token file \"%s\".\n",
-               token_path);
-    }
+  /* Step 2: call sgx_create_enclave to initialize an enclave instance */
+  /* Debug Support: set 2nd parameter to 1 */
+  ret = sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, &token, &updated,
+                           &global_eid, NULL);
+  if (ret != SGX_SUCCESS) {
+    print_error_message(ret);
+    if (fp != NULL) fclose(fp);
+    return -1;
+  }
 
-    if (fp != NULL) {
-        /* read the token from saved file */
-        size_t read_num = fread(token, 1, sizeof(sgx_launch_token_t), fp);
-        if (read_num != 0 && read_num != sizeof(sgx_launch_token_t)) {
-            /* if token is invalid, clear the buffer */
-            memset(&token, 0x0, sizeof(sgx_launch_token_t));
-            printf("Warning: Invalid launch token read from \"%s\".\n",
-                   token_path);
-        }
-    }
-
-    /* Step 2: call sgx_create_enclave to initialize an enclave instance */
-    /* Debug Support: set 2nd parameter to 1 */
-    ret = sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, &token, &updated,
-                             &global_eid, NULL);
-    if (ret != SGX_SUCCESS) {
-        print_error_message(ret);
-        if (fp != NULL) fclose(fp);
-        return -1;
-    }
-
-    /* Step 3: save the launch token if it is updated */
-    /* __GNUC__ */
-    if (updated == FALSE || fp == NULL) {
-        /* if the token is not updated, or file handler is invalid, do not
-         * perform saving */
-        if (fp != NULL) fclose(fp);
-        return 0;
-    }
-
-    /* reopen the file with write capablity */
-    fp = freopen(token_path, "wb", fp);
-    if (fp == NULL) return 0;
-    size_t write_num = fwrite(token, 1, sizeof(sgx_launch_token_t), fp);
-    if (write_num != sizeof(sgx_launch_token_t))
-        printf("Warning: Failed to save launch token to \"%s\".\n", token_path);
-    fclose(fp);
+  /* Step 3: save the launch token if it is updated */
+  /* __GNUC__ */
+  if (updated == FALSE || fp == NULL) {
+    /* if the token is not updated, or file handler is invalid, do not
+     * perform saving */
+    if (fp != NULL) fclose(fp);
     return 0;
+  }
+
+  /* reopen the file with write capablity */
+  fp = freopen(token_path, "wb", fp);
+  if (fp == NULL) return 0;
+  size_t write_num = fwrite(token, 1, sizeof(sgx_launch_token_t), fp);
+  if (write_num != sizeof(sgx_launch_token_t))
+    printf("Warning: Failed to save launch token to \"%s\".\n", token_path);
+  fclose(fp);
+  return 0;
 }
 
 /* OCall functions */
 void ocall_printf(const char *str, int ret[1])
 {
-    /* Proxy/Bridge will check the length and null-terminate
-     * the input string to prevent buffer overflow.
-     */
-    printf("%s", str);
-    ret[0] = 13;
+  /* Proxy/Bridge will check the length and null-terminate
+   * the input string to prevent buffer overflow.
+   */
+  printf("%s", str);
+  ret[0] = 13;
 }
 
 void swap(int *a, int *b)
 {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
+  int temp = *a;
+  *a = *b;
+  *b = temp;
 }
 
 void permutation_generate(int *permutation, int n)
 {
-    int i;
-    for (i = 0; i <= n - 2; i++) {
-        int j = rand() % (n - i);
-        swap(&permutation[i], &permutation[i + j]);
-    }
+  int i;
+  for (i = 0; i <= n - 2; i++) {
+    int j = rand() % (n - i);
+    swap(&permutation[i], &permutation[i + j]);
+  }
 }
 
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
 {
-    /* Initialize the enclave */
-    if (initialize_enclave() < 0) {
-        printf("Error enclave and exit\n");
-        return -1;
-    }
+  /* Initialize the enclave */
+  if (initialize_enclave() < 0) {
+    printf("Error enclave and exit\n");
+    return -1;
+  }
 
-    /* Utilize trusted libraries */
-    int retval;
+  /* Utilize trusted libraries */
+  int retval;
 
-    int32_t *M_data = new int32_t[N];
-    int32_t *M_perm = new int32_t[N];
-    int32_t *M_output = new int32_t[N];
-    int32_t *M_sim_output = new int32_t[N];
-    int eax = 0, ebx = 0, ecx = 1, edx = 0, cl_size = 0, n_ways = 0;
-    int c_size = 0;
-    struct sched_param param;
-    param.sched_priority = 0;
-    sched_setscheduler(0, SCHED_FIFO, &param);
-    cpuinfo(0x04, &eax, &ebx, &ecx, &edx);
-    cl_size = ebx & SIZE_MASK;
-    n_ways = (ebx & WAYS_MASK) >> 22;
-    c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
-    for (int i = 0; i < N; i++) M_data[i] = i;
-    for (int i = 0; i < N; i++) M_perm[i] = i;
-    permutation_generate(M_perm, N);
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
-    retval = ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output,
-                                   c_size);
-    gettimeofday(&end, NULL);
-    /*for(int i=0;i<N;i++)
-        M_sim_output[M_perm[i]] = M_data[i];
-    for(int i=0;i<N;i++) {
-        if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
-    }*/
-    printf("final result right\n");
-    // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
-    // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
-    printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec) -
-                     (start.tv_sec * 1000000 + start.tv_usec)));
-    //    printf("retval: %d\n", retval);
-    // TODO this call is buggy, FIXME
-    //    copy_D_M(M_output, j);
+  int32_t *M_data = new int32_t[N];
+  int32_t *M_perm = new int32_t[N];
+  int32_t *M_output = new int32_t[N];
+  int32_t *M_sim_output = new int32_t[N];
+  int eax = 0, ebx = 0, ecx = 1, edx = 0, cl_size = 0, n_ways = 0;
+  int c_size = 0;
+  struct sched_param param;
+  param.sched_priority = 0;
+  sched_setscheduler(0, SCHED_FIFO, &param);
+  cpuinfo(0x04, &eax, &ebx, &ecx, &edx);
+  cl_size = ebx & SIZE_MASK;
+  n_ways = (ebx & WAYS_MASK) >> 22;
+  c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
+  for (int i = 0; i < N; i++) M_data[i] = i;
+  for (int i = 0; i < N; i++) M_perm[i] = i;
+  permutation_generate(M_perm, N);
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
+  retval =
+      ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
+  gettimeofday(&end, NULL);
+  /*for(int i=0;i<N;i++)
+      M_sim_output[M_perm[i]] = M_data[i];
+  for(int i=0;i<N;i++) {
+      if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
+  }*/
+  printf("final result right\n");
+  // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
+  // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
+  printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec) -
+                   (start.tv_sec * 1000000 + start.tv_usec)));
+  //    printf("retval: %d\n", retval);
+  // TODO this call is buggy, FIXME
+  //    copy_D_M(M_output, j);
 
-    /* Destroy the enclave */
-    sgx_destroy_enclave(global_eid);
-    printf("Info: SampleEnclave successfully returned.\n");
-    return 0;
+  /* Destroy the enclave */
+  sgx_destroy_enclave(global_eid);
+  printf("Info: SampleEnclave successfully returned.\n");
+  return 0;
 }

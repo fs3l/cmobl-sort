@@ -32,4 +32,3 @@
 
 typedef void *buffer_t;
 typedef int array_t[10];
-
