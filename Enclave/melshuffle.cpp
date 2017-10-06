@@ -759,6 +759,22 @@ __attribute__((always_inline)) inline void app_distribute64d2()
             :);
 }
 
+__attribute__((always_inline)) inline void app_distribute_c(int32_t* txmem, int size1, int size2){
+  int32_t perm = 0;
+  int32_t data = 0;
+  int32_t off = 0;
+  for(int i=0;i<size2;i++) {
+      data = txmem[size1+i];
+      perm = txmem[size1+size2+i];
+      off = (perm/SqrtN)*(2*BLOWUPFACTOR+1);
+      txmem[off+1+txmem[off]] = perm;
+      txmem[off+1+txmem[off]+1] = data;
+      txmem[off] += 2;
+  }
+}
+
+
+
 __attribute__((always_inline)) inline void app_distribute2()
 {
     __asm__(
@@ -901,42 +917,24 @@ void memsetup_distribute64d2(int32_t* M_data, int32_t M_data_init,
     *txmem_p = g_tx_dis_mem;
     *size_p = 12 * 1024;
 }
-
-void memsetup_distribute2(int32_t* M_data, int32_t M_data_init,
-                          int32_t M_data_size, int32_t* M_perm,
-                          int32_t M_perm_init, int32_t* M_output,
-                          int32_t M_output_init, int32_t M_output_size,
-                          int32_t** txmem_p, int32_t* size_p)
+void memsetup_distribute_c(int32_t* M_data, int32_t M_data_init,
+                         int32_t M_data_size, int32_t* M_perm,
+                         int32_t M_perm_init, int32_t* M_output,
+                         int32_t M_output_init, int32_t M_output_size,
+                         int32_t** txmem_p, int32_t* size_p)
 {
-    int start = 0;
-    int rack = 0;
-    int pos_data = 0;
-    int pos_perm = 0;
-    for (int i = 0; i < SqrtN / 16; i++) {
-        rack = 0;
-        for (int j = 0; j < 16; j++) {
-            g_tx_dis_mem[start + rack] = 0;
-            for (int k = 1; k < 2 * BLOWUPFACTOR + 1; k++)
-                g_tx_dis_mem[start + rack + k] = -1;
-            rack += 2 * BLOWUPFACTOR + 1;
-        }
-        for (int j = 0; j < 16; j++) {
-            g_tx_dis_mem[start + rack + j] =
-                M_data[SqrtN * M_data_init + pos_data++];
-        }
-        rack += 16;
-        for (int j = 0; j < 16; j++) {
-            int cur = M_perm[SqrtN * M_perm_init + pos_perm++];
-            int off = 4 * (2 * BLOWUPFACTOR + 1) * ((cur / SqrtN) % 16) +
-                      ((cur / SqrtN) / 16) * 4096;
-            g_tx_dis_mem[start + rack + j * 2] = off;
-            g_tx_dis_mem[start + rack + j * 2 + 1] = cur;
-        }
-        start += 1024;
-    }
-
-    *txmem_p = g_tx_dis_mem;
-    *size_p = (SqrtN / 16) * 1024;
+    static int32_t txmem[3 * SqrtN + 2 * BLOWUPFACTOR * SqrtN];
+    int32_t* E_data_prime = &txmem[2 * SqrtN * BLOWUPFACTOR + SqrtN];
+    int32_t* E_perm_prime = &txmem[2 * SqrtN * BLOWUPFACTOR + 2 * SqrtN];
+    for (int i = 0; i < 2 * BLOWUPFACTOR * SqrtN + 4 * SqrtN; i++)
+        txmem[i] = -1;
+    for (int i = 0; i < SqrtN; i++) txmem[i * (2 * BLOWUPFACTOR + 1)] = 0;
+    for (int i = 0; i < SqrtN; i++)
+        E_data_prime[i] = M_data[SqrtN * M_data_init + i];
+    for (int i = 0; i < SqrtN; i++)
+        E_perm_prime[i] = M_perm[SqrtN * M_perm_init + i];
+    *txmem_p = txmem;
+    *size_p = 3 * SqrtN + 2 * SqrtN * BLOWUPFACTOR;
 }
 
 
@@ -1152,12 +1150,13 @@ void apptx_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
     int32_t* txmem;
     int32_t txmem_size;
     g_starts++;
-    memsetup_distribute(M_data, M_data_init, M_data_size, M_perm, M_perm_init,
+    memsetup_distribute_c(M_data, M_data_init, M_data_size, M_perm, M_perm_init,
                         M_output, M_output_init, M_output_size, &txmem,
                         &txmem_size);
     contextsave();
     txbegin(txmem, 2 * BLOWUPFACTOR * SqrtN + SqrtN, M_data_size);
-    app_distribute2();
+    //app_distribute2();
+    app_distribute_c(txmem,2*BLOWUPFACTOR*SqrtN+SqrtN,M_data_size);
     txend();
     for (int i = 0; i < SqrtN; i++)
         for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
@@ -1228,11 +1227,11 @@ int melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size,
         return 0;
 
     // method selection
-    if (input_size == 128 * 128) {
-        distribute_method = apptx_distribute128d2;
-    } else if (input_size == 64 * 64) {
-        distribute_method = apptx_distribute64d2;
-    } else
+   // if (input_size == 128 * 128) {
+   //     distribute_method = apptx_distribute128d2;
+   // } else if (input_size == 64 * 64) {
+   //     distribute_method = apptx_distribute64d2;
+   // } else
         distribute_method = apptx_distribute;
 
     int32_t* M_data = (int32_t*)M_data_ref;
