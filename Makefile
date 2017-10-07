@@ -184,7 +184,13 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave/Enclave_private.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
-.PHONY: clean
+.PHONY: clean clang-format
 
 clean:
 	@rm -f $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*
+
+clang-format:
+	@find . -type f \( -name "*.cpp" -or -name "*.h" -or -name "*.hpp" \) \
+		-not -path "./baseline_wordobl/*" \
+		-print -exec clang-format -i {} \;
+
