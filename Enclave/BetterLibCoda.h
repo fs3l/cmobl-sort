@@ -7,7 +7,7 @@
 class ObIterator
 {
 public:
-  virtual ~ObIterator() = 0;
+  virtual ~ObIterator(){};
   virtual size_t size() const = 0;
   virtual int32_t read_next() = 0;
   virtual void write_next(int32_t value) = 0;
@@ -16,7 +16,7 @@ public:
 class NobArray
 {
 public:
-  virtual ~NobArray() = 0;
+  virtual ~NobArray(){};
   virtual size_t size() const = 0;
   virtual int32_t read_at(size_t pos) const = 0;
   virtual void write_at(size_t pos, int32_t value) = 0;
@@ -25,7 +25,7 @@ public:
 class Coda
 {
 public:
-  virtual ~Coda() = 0;
+  virtual ~Coda(){};
   virtual void tx_begin() = 0;
   virtual void tx_end() = 0;
   virtual ObIterator* make_ob_iterator(int32_t* data, size_t len) = 0;
