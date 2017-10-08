@@ -208,6 +208,58 @@ __attribute__((always_inline)) inline void txbegin64d2(int32_t* txmem,
       ::
           :);
 }
+__attribute__((always_inline)) inline void txbegin_test(uint32_t* txmem,
+                                                   uint32_t nob_size)
+{
+
+  __asm__(
+      "movl %0,%%esi\n\t"
+      "mov %1,%%rdi\n\t"
+      :
+      : "r"(nob_size), "r"(txmem)
+      : "esi", "edi");
+  __asm__(
+      "movl %%esi, %%r8d\n\t"
+      "mov $0, %%eax\n\t"
+      "mov $0, %%ebx\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_xx_%=:\n\t"
+      "cmpl  $17,%%ebx\n\t"  //  #r8d is the LSB of the r8
+      "jge    endloop_xx_%=\n\t"
+      "loop_ep_%=:\n\t"
+      "cmpl  $16,%%eax\n\t"  //  #r8d is the LSB of the r8
+      "jge    endloop_ep_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add    $4, %%rcx\n\t"
+      "jmp    loop_ep_%=\n\t"
+      "endloop_ep_%=:\n\t"
+      "add    $524288, %%rcx\n\t"
+      "addl   $1, %%ebx\n\t"
+      "jmp    loop_xx_%=\n\t"
+      "endloop_xx_%=:\n\t"
+      "xbegin asm_abort_handler\n\t"
+      "mov %%rdi,%%rcx\n\t"
+      "mov $0, %%eax\n\t"
+      "mov $0, %%ebx\n\t"
+      "loop_ip_xx_%=:\n\t"
+      "cmpl  $17,%%ebx\n\t"  //  #r8d is the LSB of the r8
+      "jge    endloop_ip_xx_%=\n\t"
+      "loop_ip_%=:\n\t"
+      "cmpl  %%16,%%eax\n\t"
+      "jge    endloop_ip_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add   $4, %%rcx\n\t"
+      "jmp    loop_ip_%=\n\t"
+      "endloop_ip_%=:\n\t"
+      "add    $524288, %%rcx\n\t"
+      "addl   $1, %%ebx\n\t"
+      "jmp    loop_ip_xx_%=\n\t"
+      "endloop_ip_xx_%=:\n\t"
+          :::);
+}
+
 
 __attribute__((always_inline)) inline void txbegin(int32_t* txmem,
                                                    int32_t nob_size,

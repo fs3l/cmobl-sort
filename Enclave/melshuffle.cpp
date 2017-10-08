@@ -16,6 +16,8 @@ Author: Ju Chen
 #include "./LibCoda.h"
 #include "./melshuffle.h"
 
+#define BIGN 2228224
+uint32_t bigmem[BIGN] __attribute__((aligned(64)));
 uint64_t gContext[100];
 int32_t g_scratch[2 * BLOWUPFACTOR * N];
 // debug
@@ -1089,6 +1091,12 @@ int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
     output = swap;
   }
   return input;
+}
+
+void loadbig() {
+  memset(bigmem,0,sizeof(uint32_t)*BIGN);
+  //txbegin_test(bigmem, BIGN);
+  //txend();
 }
 
 void apptx_distribute128d2(int32_t* M_data, int32_t M_data_init,
