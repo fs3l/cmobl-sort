@@ -2,6 +2,7 @@
 #define _LIB_CODA_H
 
 #include "./Enclave.h"
+#include "./Enclave_t.h"
 
 class ObIterator
 {
