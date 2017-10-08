@@ -6,6 +6,7 @@ ObIterator* DummyCoda::make_ob_iterator(int32_t* data, size_t len) {
     ob_mem[ob_global+i] = data[i];
   ob_handle++;
   ob_start[ob_handle] = ob_global;
+  ob_pos[ob_handle] = 0;
   ob_global+=len;
   res->handle = ob_handle;
   res->cur = this;
