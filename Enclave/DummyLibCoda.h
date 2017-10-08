@@ -1,6 +1,6 @@
 #ifndef _DUMMY_CODA_H
 #define _DUMMY_CODA_H
-
+#include <string.h>
 #include "./BetterLibCoda.h"
 
 class DummyCoda;
@@ -58,6 +58,7 @@ public:
     nob_global = 0;
     ob_handle = 0;
     nob_handle = 0;
+    memset(ob_pos,0,sizeof(size_t)*100);
   }
   ~DummyCoda() {}
   void tx_begin() {}
