@@ -7,26 +7,26 @@
 class ObIterator
 {
 public:
-  size_t size() const;
-  int32_t read_next(int32_t* value);
-  int32_t write_next(int32_t value);
+  virtual size_t size() const = 0;
+  virtual int32_t read_next()=0;
+  virtual void write_next(int32_t value)=0;
 };
 
 class NobArray
 {
 public:
-  size_t size() const;
-  int32_t read_at(size_t pos, int32_t* value);
-  int32_t write_at(size_t pos, int32_t value);
+  virtual size_t size() const = 0;
+  virtual int32_t read_at(size_t pos)=0;
+  virtual void write_at(size_t pos, int32_t value)=0;
 };
 
 class Coda
 {
 public:
-  void tx_begin();
-  void tx_end();
-  ObIterator make_ob_iterator(int32_t* data, size_t len);
-  NobArray make_nob_array(int32_t* data, size_t len);
+  virtual void tx_begin() = 0;
+  virtual void tx_end() = 0;
+  virtual ObIterator* make_ob_iterator(int32_t* data, size_t len)=0;
+  virtual NobArray* make_nob_array(int32_t* data, size_t len)=0;
 };
 
 #endif
