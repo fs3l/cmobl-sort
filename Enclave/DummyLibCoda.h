@@ -59,6 +59,8 @@ public:
     ob_handle = 0;
     nob_handle = 0;
     memset(ob_pos,0,sizeof(size_t)*100);
+    memset(ob_start,0,sizeof(size_t)*100);
+    memset(nob_start,0,sizeof(size_t)*100);
   }
   ~DummyCoda() {}
   void tx_begin() {}
