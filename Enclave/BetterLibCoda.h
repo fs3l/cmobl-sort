@@ -9,7 +9,7 @@ class ObIterator
 public:
   virtual ~ObIterator() = 0;
   virtual size_t size() const = 0;
-  virtual int32_t read_next() const = 0;
+  virtual int32_t read_next() = 0;
   virtual void write_next(int32_t value) = 0;
 };
 
@@ -18,7 +18,7 @@ class NobArray
 public:
   virtual ~NobArray() = 0;
   virtual size_t size() const = 0;
-  virtual int32_t read_at(size_t pos) = 0;
+  virtual int32_t read_at(size_t pos) const = 0;
   virtual void write_at(size_t pos, int32_t value) = 0;
 };
 
