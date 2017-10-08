@@ -9,24 +9,30 @@ class DummyNobArray : public NobArray
 {
 public:
   DummyNobArray() { handle = 0; }
-  ~DummyNobArray() {}
-  size_t handle;
-  DummyCoda* cur;
-  size_t size() const { return 0; }
+  ~DummyNobArray();
+  size_t size() const { return len; }
   int32_t read_at(size_t pos) const;
   void write_at(size_t pos, int32_t value);
+
+  size_t handle;
+  DummyCoda* cur;
+  int32_t* data;
+  size_t len;
 };
 
 class DummyObIterator : public ObIterator
 {
 public:
   DummyObIterator() { handle = 0; }
-  ~DummyObIterator() {}
-  size_t handle;
-  DummyCoda* cur;
-  size_t size() const { return 0; }
+  ~DummyObIterator();
+  size_t size() const { return len; }
   int32_t read_next();
   void write_next(int32_t value);
+
+  size_t handle;
+  DummyCoda* cur;
+  int32_t* data;
+  size_t len;
 };
 
 class DummyCoda : public Coda
