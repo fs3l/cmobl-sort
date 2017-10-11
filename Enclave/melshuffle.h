@@ -8,6 +8,8 @@ extern "C" {
 int melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size,
                int input_size);
 void loadbig();
+void noptx();
+void memscan();
 #ifdef __cplusplus
 }
 #endif

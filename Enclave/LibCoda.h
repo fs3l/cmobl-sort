@@ -208,6 +208,68 @@ __attribute__((always_inline)) inline void txbegin64d2(int32_t* txmem,
       ::
           :);
 }
+
+__attribute__ ((always_inline)) inline void txbegin_nop(){
+  __asm__ __volatile__ (
+    //"xbegin asm_abort_handler\n\t"
+    "nop\n\t"
+  );
+}
+
+__attribute__ ((always_inline)) inline void txbegin_nop1m(){
+  __asm__ __volatile__ (
+    "xbegin asm_abort_handler\n\t"
+    "mov $0,%%eax\n\t"
+    "loop_nop_%=:\n\t"
+    "cmpl $10000000,%%eax\n\t"
+    "jge end_nop_loop_%=\n\t"
+    "nop\n\t"
+    "add $1,%%eax\n\t"
+    "jmp loop_nop_%=\n\t"
+    "end_nop_loop_%=:\n\t":::
+  );
+}
+
+
+__attribute__ ((always_inline)) inline void txbegin_memscan(int32_t* mem){
+ __asm__(
+      "mov %0,%%rdi\n\t"
+      :
+      : "r"(mem)
+      : "rdi");
+
+
+__asm__ __volatile__( 
+      "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_xx_%=:\n\t"
+      "cmpl $2048,%%eax\n\t"
+      "jge endloop_xx_%=\n\t"
+      "movl $5,(%%rcx)\n\t"
+      "add %%r11,%%r12\n\t"
+      "addl $1, %%eax\n\t"
+      "add $4, %%rcx\n\t"
+      "jmp loop_xx_%=\n\t"
+      "endloop_xx_%=:\n\t"
+     /* "xbegin asm_abort_handler\n\t"
+       "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_yy_%=:\n\t"
+      "cmpl $2048,%%eax\n\t"
+      "jge endloop_yy_%=\n\t"
+      "movl $5,(%%rcx)\n\t"
+      "add %%r11,%%r12\n\t"
+      "addl $1, %%eax\n\t"
+      "add $4, %%rcx\n\t"
+      "jmp loop_yy_%=\n\t"
+      "endloop_yy_%=:\n\t"*/
+:::);
+
+}
+
+
+
+
 __attribute__((always_inline)) inline void txbegin_test(uint32_t* txmem,
                                                    uint32_t nob_size)
 {
@@ -218,23 +280,58 @@ __attribute__((always_inline)) inline void txbegin_test(uint32_t* txmem,
       :
       : "r"(nob_size), "r"(txmem)
       : "esi", "edi");
+/*
+  __asm__ __volatile__( 
+      "movl %%esi, %%r8d\n\t"
+      "mov $0, %%eax\n\t"
+      "mov $0, %%r12\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_xx_%=:\n\t"
+      "cmpl %%r8d,%%eax\n\t"
+      "jge endloop_xx_%=\n\t"
+      "movl (%%rcx),%%r11d\n\t"
+      "add %%r11,%%r12\n\t"
+      "addl $1, %%eax\n\t"
+      "add $4, %%rcx\n\t"
+      "jmp loop_xx_%=\n\t"
+      "endloop_xx_%=:\n\t":::"memory");
+
+  __asm__ __volatile__(
+      "xbegin asm_abort_handler\n\t"
+      "movl %%esi, %%r8d\n\t"
+      "movl $0, %%eax\n\t"
+      "mov $0, %%r12\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_yy_%=:\n\t"
+      "cmpl %%r8d,%%eax\n\t"
+      "jge endloop_yy_%=\n\t"
+      "movl (%%rcx),%%r11d\n\t"
+      "add %%r11,%%r12\n\t"
+      "addl $1, %%eax\n\t"
+      "add $4, %%rcx\n\t"
+      "jmp loop_yy_%=\n\t"
+      "endloop_yy_%=:\n\t":::"memory");*/
+
   __asm__(
       "movl %%esi, %%r8d\n\t"
       "mov $0, %%eax\n\t"
+      "mov $0, %%r12\n\t"
       "mov $0, %%ebx\n\t"
       "mov %%rdi, %%rcx\n\t"
       "loop_xx_%=:\n\t"
-      "cmpl  $17,%%ebx\n\t"  //  #r8d is the LSB of the r8
+      "cmpl  $60,%%ebx\n\t"  //  #r8d is the LSB of the r8
       "jge    endloop_xx_%=\n\t"
       "loop_ep_%=:\n\t"
+     // "cmpl  $131072,%%eax\n\t"  //  #r8d is the LSB of the r8
       "cmpl  $16,%%eax\n\t"  //  #r8d is the LSB of the r8
       "jge    endloop_ep_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
+      "add %%r11, %%r12\n\t"
       "addl   $1, %%eax\n\t"
       "add    $4, %%rcx\n\t"
       "jmp    loop_ep_%=\n\t"
       "endloop_ep_%=:\n\t"
-      "add    $524288, %%rcx\n\t"
+      "add    $524224, %%rcx\n\t"
       "addl   $1, %%ebx\n\t"
       "jmp    loop_xx_%=\n\t"
       "endloop_xx_%=:\n\t"
@@ -243,17 +340,18 @@ __attribute__((always_inline)) inline void txbegin_test(uint32_t* txmem,
       "mov $0, %%eax\n\t"
       "mov $0, %%ebx\n\t"
       "loop_ip_xx_%=:\n\t"
-      "cmpl  $17,%%ebx\n\t"  //  #r8d is the LSB of the r8
+      "cmpl  $60,%%ebx\n\t"  //  #r8d is the LSB of the r8
       "jge    endloop_ip_xx_%=\n\t"
       "loop_ip_%=:\n\t"
-      "cmpl  %%16,%%eax\n\t"
+      //"cmpl  $131072,%%eax\n\t"
+      "cmpl  $16,%%eax\n\t"
       "jge    endloop_ip_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
       "addl   $1, %%eax\n\t"
       "add   $4, %%rcx\n\t"
       "jmp    loop_ip_%=\n\t"
       "endloop_ip_%=:\n\t"
-      "add    $524288, %%rcx\n\t"
+      "add    $524224, %%rcx\n\t"
       "addl   $1, %%ebx\n\t"
       "jmp    loop_ip_xx_%=\n\t"
       "endloop_ip_xx_%=:\n\t"

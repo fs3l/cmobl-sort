@@ -16,17 +16,16 @@ Author: Ju Chen
 #include "./LibCoda.h"
 #include "./melshuffle.h"
 
-#define BIGN 2228224
+#define BIGN 3932160
 uint32_t bigmem[BIGN] __attribute__((aligned(64)));
+int32_t mem_scan[2048] __attribute__((aligned(64)));
 uint64_t gContext[100];
 int32_t g_scratch[2 * BLOWUPFACTOR * N];
 // debug
 int32_t g_scratch_1[2 * BLOWUPFACTOR * N];
 int32_t g_tx_mem[8192];
 int32_t g_tx_dis_mem[12 * 1024] __attribute__((aligned(64)));
-;
 int32_t g_tx_dis_mem128[24 * 1024] __attribute__((aligned(64)));
-;
 
 void (*distribute_method)(int32_t*, int32_t, int32_t, int32_t*, int32_t,
                           int32_t*, int32_t, int32_t);
@@ -1094,9 +1093,33 @@ int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
 }
 
 void loadbig() {
+  contextsave();
   memset(bigmem,0,sizeof(uint32_t)*BIGN);
-  //txbegin_test(bigmem, BIGN);
-  //txend();
+  txbegin_test(bigmem, BIGN);
+  txend();
+}
+
+void memscan() {
+  for (int i=0;i<100000000;i++) {
+   // contextsave();
+    txbegin_memscan(mem_scan);
+   // txend();
+   // if (i%50==0)
+   // EPrintf("finishes %d\n",i);
+  }
+  EPrintf("aborts = %d\n",g_aborts);
+}
+
+
+void noptx() {
+  for (int i=0;i<200;i++) {
+    contextsave();
+    txbegin_nop1m();
+    txend();
+   // if (i%50==0)
+   // EPrintf("finishes %d\n",i);
+  }
+  EPrintf("aborts = %d\n",g_aborts);
 }
 
 void apptx_distribute128d2(int32_t* M_data, int32_t M_data_init,
