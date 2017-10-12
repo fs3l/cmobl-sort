@@ -2,7 +2,8 @@
 
 //coda is a singleton 
 struct RealCoda theCoda;
-
+unsigned long old_rsp;
+int coda_aborts = 0;
 void increment_meta(INDEX* meta) {
   if ((*meta%1024)==15)
     *meta =  *meta+1009; //1024-15
@@ -15,7 +16,7 @@ INDEX cal_ob(INDEX offset) {
 }
 
 INDEX cal_nob(INDEX offset) {
-  return (offset/496)*1024 + offset%496 + 32;
+  return (offset/528)*1024 + offset%528 + 80;
 }
 
 HANDLE declare_ob_iterator(DATA* data, LENGTH len) {
@@ -107,4 +108,8 @@ void ob_write_next(HANDLE h, DATA d) {
   //increment cur position for ob
   theCoda.txmem[offset+2]++;
   theCoda.txmem[target] = d;
+}
+
+extern "C" {
+void coda_tx_abort(int code) { coda_aborts++; }
 }

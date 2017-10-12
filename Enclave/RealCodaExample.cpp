@@ -12,7 +12,7 @@ int real_coda_shuffle()
   HANDLE iterPerm = declare_ob_iterator(perm,4);
   HANDLE arrayOutput = declare_nob_array(output,4);
 
-  //coda_tx_begin();
+  coda_txbegin();
   // app logic start
   for (int i = 0; i < 4; i++) {
     int v1, v2;
@@ -21,7 +21,7 @@ int real_coda_shuffle()
     nob_write_at(arrayOutput,v2, v1);
   }
   // app logic end
- // coda_tx_end();
+  coda_txend();
 
   for (int i = 0; i < 4; i++) {
     int v = nob_read_at(arrayOutput,i);

@@ -176,7 +176,7 @@ Enclave/%.o: Enclave/%.cpp
 	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects) Enclave/abort_handling.s
+$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects) Enclave/coda_abort_handling.s Enclave/abort_handling.s
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)
 	@echo "LINK =>  $@"
 
