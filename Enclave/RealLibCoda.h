@@ -31,8 +31,8 @@ struct RealCoda
   }
 };
 
-HANDLE declare_ob_iterator(DATA* data, LENGTH len);
-HANDLE declare_nob_array(DATA* data, LENGTH len);
+HANDLE initialize_ob_iterator(DATA* data, LENGTH len);
+HANDLE initialize_nob_array(DATA* data, LENGTH len);
 
 DATA nob_read_at(HANDLE h, INDEX pos);
 void nob_write_at(HANDLE h, INDEX pos, DATA d);

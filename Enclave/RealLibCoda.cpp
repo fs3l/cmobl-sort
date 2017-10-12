@@ -19,7 +19,7 @@ INDEX cal_nob(INDEX offset) {
   return (offset/528)*1024 + offset%528 + 80;
 }
 
-HANDLE declare_ob_iterator(DATA* data, LENGTH len) {
+HANDLE initialize_ob_iterator(DATA* data, LENGTH len) {
   //first, allocate a handle for it
   theCoda.handle++;
   //second, fill in the meta data
@@ -41,7 +41,7 @@ HANDLE declare_ob_iterator(DATA* data, LENGTH len) {
   return theCoda.handle;
 }
 
-HANDLE declare_nob_array(DATA* data, LENGTH len) {
+HANDLE initialize_nob_array(DATA* data, LENGTH len) {
   //first, allocate a handle for it
   theCoda.handle++;
   // second, fill the meta data

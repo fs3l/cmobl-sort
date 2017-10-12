@@ -8,9 +8,9 @@ int real_coda_shuffle()
   int32_t perm[4] = {3, 1, 0, 2};
   int32_t output[4];
 
-  HANDLE iterData = declare_ob_iterator(data,4);
-  HANDLE iterPerm = declare_ob_iterator(perm,4);
-  HANDLE arrayOutput = declare_nob_array(output,4);
+  HANDLE iterData = initialize_ob_iterator(data,4);
+  HANDLE iterPerm = initialize_ob_iterator(perm,4);
+  HANDLE arrayOutput = initialize_nob_array(output,4);
 
   coda_txbegin();
   // app logic start
