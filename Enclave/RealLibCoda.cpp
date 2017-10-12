@@ -1,52 +1,110 @@
 #include "./RealLibCoda.h"
 
-ObIterator* RealCoda::make_ob_iterator(int32_t* data, size_t len) {
-  RealObIterator* res = new RealObIterator();
-  for (int i=0; i< len; i++)
-    ob_mem[ob_global+i] = data[i];
-  ob_handle++;
-  ob_start[ob_handle] = ob_global;
-  ob_global+=len;
-  res->handle = ob_handle;
-  res->cur = this;
-  res->data = data;
-  res->len = len;
-  return res;
+//coda is a singleton 
+struct RealCoda theCoda;
+
+void increment_meta(INDEX* meta) {
+  if ((*meta%1024)==15)
+    *meta =  *meta+1009; //1024-15
+  else *meta =  *meta+1;
 }
 
 
-NobArray* RealCoda::make_nob_array(int32_t* data, size_t len) {
-  RealNobArray* res = new RealNobArray();
-  return res;
+INDEX cal_ob(INDEX offset) {
+  return (offset/16)*1024 + offset%16+16;
 }
 
-RealNobArray::~RealNobArray() {
-  for (int i=0;i<len;i++) {
-    data[i] = cur->nob_mem[cur->nob_start[handle]+i];
+INDEX cal_nob(INDEX offset) {
+  return (offset/496)*1024 + offset%496 + 32;
+}
+
+HANDLE declare_ob_iterator(DATA* data, LENGTH len) {
+  //first, allocate a handle for it
+  theCoda.handle++;
+  //second, fill in the meta data
+  INDEX meta = theCoda.cur_meta;
+  theCoda.txmem[meta] = theCoda.cur_ob;
+  increment_meta(&meta);
+  theCoda.txmem[meta] = len;
+  increment_meta(&meta);
+  theCoda.txmem[meta] = 0;
+  increment_meta(&meta);
+  theCoda.cur_meta = meta;
+  //third, fill the data
+  INDEX iob = theCoda.cur_ob;
+  for(INDEX i=0;i<len;i++) {
+    theCoda.txmem[cal_ob(iob)] = data[i];
+    iob++;
   }
+  theCoda.cur_ob = iob;
+  return theCoda.handle;
 }
 
-RealObIterator::~RealObIterator() {
-  for (int i=0;i<len;i++) {
-    data[i] = cur->ob_mem[cur->ob_start[handle]+i];
+HANDLE declare_nob_array(DATA* data, LENGTH len) {
+  //first, allocate a handle for it
+  theCoda.handle++;
+  // second, fill the meta data
+  INDEX meta = theCoda.cur_meta;
+  theCoda.txmem[meta] = theCoda.cur_nob;
+  increment_meta(&meta);
+  theCoda.txmem[meta] = len;
+  increment_meta(&meta);
+  theCoda.txmem[meta] = 0;
+  increment_meta(&meta);
+  theCoda.cur_meta = meta;
+  // third, fill the coda
+  INDEX inob = theCoda.cur_nob;
+  for(INDEX i=0;i<len;i++) {
+    theCoda.txmem[cal_nob(inob)] = data[i];
+    inob++;
   }
+  theCoda.cur_nob = inob;
+  return theCoda.handle;
 }
 
-int32_t RealNobArray::read_at(size_t pos) const {
-  return cur->nob_mem[cur->nob_start[handle]+pos];
+
+DATA nob_read_at(HANDLE h, INDEX pos) {
+  //first, find the meta data slot
+  INDEX offset = ((h*3)/16)*1024 + (h*3)%16;
+  INDEX ob_start = theCoda.txmem[offset];
+  INDEX ob_len = theCoda.txmem[offset+1];
+  //calculate the target address
+  INDEX target = cal_nob(ob_start+pos);
+  return theCoda.txmem[target];
 }
 
-void RealNobArray::write_at(size_t pos, int32_t value) {
-  cur->nob_mem[cur->nob_start[handle]+pos] = value;
+void nob_write_at(HANDLE h, INDEX pos, DATA d) {
+  //first, find the meta data slot
+  INDEX offset = ((h*3)/16)*1024 + (h*3)%16;
+  INDEX ob_start = theCoda.txmem[offset];
+  INDEX ob_len = theCoda.txmem[offset+1];
+  //calculate the target address
+  INDEX target = cal_nob(ob_start+pos);
+  theCoda.txmem[target] = d;
 }
 
-int32_t RealObIterator::read_next() {
-  int32_t res =  cur->ob_mem[cur->ob_start[handle]+cur->ob_pos[handle]];
-  cur->ob_pos[handle]++;
-  return res;
+DATA ob_read_next(HANDLE h) {
+  //first, find the meta data slot
+  INDEX offset = ((h*3)/16)*1024 + (h*3)%16;
+  INDEX ob_start = theCoda.txmem[offset];
+  INDEX ob_len = theCoda.txmem[offset+1];
+  INDEX ob_cur = theCoda.txmem[offset+2];
+  //calculate the target address
+  INDEX target = cal_ob(ob_start+ob_cur);
+  //increment cur position for ob
+  theCoda.txmem[offset+2]++;
+  return theCoda.txmem[target];
 }
 
-void RealObIterator::write_next(int32_t value) {
-  cur->ob_mem[cur->ob_start[handle]+cur->ob_pos[handle]]=value;
-  cur->ob_pos[handle]++;
+void ob_write_next(HANDLE h, DATA d) {
+  //first, find the meta data slot
+  INDEX offset = ((h*3)/16)*1024 + (h*3)%16;
+  INDEX ob_start = theCoda.txmem[offset];
+  INDEX ob_len = theCoda.txmem[offset+1];
+  INDEX ob_cur = theCoda.txmem[offset+2];
+  //calculate the target address
+  INDEX target = cal_ob(ob_start+ob_cur);
+  //increment cur position for ob
+  theCoda.txmem[offset+2]++;
+  theCoda.txmem[target] = d;
 }

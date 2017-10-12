@@ -3,70 +3,40 @@
 #include <string.h>
 #include "./BetterLibCoda.h"
 
-class RealCoda;
+typedef uint32_t HANDLE;
+typedef int32_t DATA;
+typedef uint32_t INDEX;
+typedef uint32_t LENGTH;
 
-class RealNobArray : public NobArray
+struct RealCoda
 {
-public:
-  RealNobArray() { handle = 0; }
-  ~RealNobArray();
-  size_t size() const { return len; }
-  int32_t read_at(size_t pos) const;
-  void write_at(size_t pos, int32_t value);
+// private
+  // 0-15 -  meta data
+  // 16-31 - nob data
+  // 32 - 527 - ob data
+  // 1024*1023 - 1024*1024-1 stack frame
+  DATA txmem[1024*1024] __attribute__((aligned(64)));
+  INDEX cur_ob;
+  INDEX cur_nob;
+  INDEX cur_meta;
+  HANDLE handle;
 
-  size_t handle;
-  RealCoda* cur;
-  int32_t* data;
-  size_t len;
-};
-
-class RealObIterator : public ObIterator
-{
-public:
-  RealObIterator() { handle = 0; }
-  ~RealObIterator();
-  size_t size() const { return len; }
-  int32_t read_next();
-  void write_next(int32_t value);
-
-  size_t handle;
-  RealCoda* cur;
-  int32_t* data;
-  size_t len;
-};
-
-class RealCoda : public Coda
-{
-private:
-  int32_t nob_mem[10000] __attribute__((aligned(64)));
-  int32_t ob_mem[10000] __attribute__((aligned(64)));
-  size_t ob_global;
-  size_t nob_global;
-  size_t ob_start[100];
-  size_t nob_start[100];
-  size_t ob_pos[100];
-  size_t ob_handle;
-  size_t nob_handle;
-
-  friend class RealNobArray;
-  friend class RealObIterator;
-
-public:
   RealCoda()
   {
-    ob_global = 0;
-    nob_global = 0;
-    ob_handle = 0;
-    nob_handle = 0;
-    memset(ob_pos,0,sizeof(size_t)*100);
-    memset(ob_start,0,sizeof(size_t)*100);
-    memset(nob_start,0,sizeof(size_t)*100);
+    cur_ob = 0;
+    cur_nob = 0;
+    cur_meta = 0;
+    handle = -1;
+    memset(txmem,0,sizeof(DATA)*1024*1024);
   }
-  ~RealCoda() {}
-  void tx_begin();
-  void tx_end() {}
-  NobArray* make_nob_array(int32_t* data, size_t len);
-  ObIterator* make_ob_iterator(int32_t* data, size_t len);
 };
+
+HANDLE declare_ob_iterator(DATA* data, LENGTH len);
+HANDLE declare_nob_array(DATA* data, LENGTH len);
+
+DATA nob_read_at(HANDLE h, INDEX pos);
+void nob_write_at(HANDLE h, INDEX pos, DATA d);
+DATA ob_read_next(HANDLE h);
+void ob_write_next(HANDLE h, DATA d);
 
 #endif

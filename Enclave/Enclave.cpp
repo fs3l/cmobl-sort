@@ -9,7 +9,8 @@
 #include "./Enclave_t.h" /* bar*/
 #include "./melshuffle.h"
 #include "./sort.h"
-int coda_shuffle();
+int real_coda_shuffle();
+
 /*
  * printf:
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -34,7 +35,7 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
 {
   // melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size, N);
   //sort(10);
-   coda_shuffle();
+   real_coda_shuffle();
 }
 
 /* ecall_sgx_cpuid:
