@@ -7,6 +7,7 @@ coda_abort_handler:
   call coda_tx_abort
   pop %r15
   pop %r14
+#  mov coda_context@GOTPCREL(%rip), %r15
   mov (%r15), %rax
   mov 8(%r15), %rbx
   mov 16(%r15), %rcx

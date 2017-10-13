@@ -3,6 +3,9 @@
 //coda is a singleton 
 struct RealCoda theCoda;
 unsigned long old_rsp;
+unsigned long old_rbp;
+unsigned long tail = (unsigned long)&theCoda.txmem[1024*1024-4];
+uint64_t coda_context[100];
 int coda_aborts = 0;
 void increment_meta(INDEX* meta) {
   if ((*meta%1024)==15)
@@ -66,6 +69,7 @@ HANDLE initialize_nob_array(DATA* data, LENGTH len) {
 
 DATA nob_read_at(HANDLE h, INDEX pos) {
   //first, find the meta data slot
+  //EPrintf("nob reat at  %d and %d\n",h,pos);
   INDEX offset = ((h*3)/16)*1024 + (h*3)%16;
   INDEX ob_start = theCoda.txmem[offset];
   INDEX ob_len = theCoda.txmem[offset+1];
@@ -109,7 +113,93 @@ void ob_write_next(HANDLE h, DATA d) {
   theCoda.txmem[offset+2]++;
   theCoda.txmem[target] = d;
 }
+/*
+void coda_txbegin()
+{
+   // uint64_t ret = coda_stack_switch();  
+   // EPrintf("ret=%lx, and rsp=%lx and rbp=%lx and %d, %d,%d\n",ret,old_rsp,old_rbp,theCoda.txmem[1024*1024-2],theCoda.txmem[1024*1024-3],theCoda.txmem[1024*1024-4]);
+    __asm__(
+      "mov %%rax,%0\n\t"
+      "mov %%rbx,%1\n\t"
+      "mov %%rcx,%2\n\t"
+      "mov %%rdx,%3\n\t"
+      "mov %%rdi,%4\n\t"
+      "mov %%rsi,%5\n\t"
+      "mov %%r8,%6\n\t"
+      "mov %%r9,%7\n\t"
+      "mov %%r10,%8\n\t"
+      "mov %%r11,%9\n\t"
+      "mov %%r12,%10\n\t"
+      "mov %%r13,%11\n\t"
+      "mov %%r15,%12\n\t"
+      "mov %13,%%r15\n\t"
+      "lea (%%rip),%%r14\n\t"
+      : "=r"(coda_context[0]), "=r"(coda_context[1]), "=r"(coda_context[2]),
+        "=r"(coda_context[3]), "=r"(coda_context[4]), "=r"(coda_context[5]),
+        "=r"(coda_context[6]), "=r"(coda_context[7]), "=r"(coda_context[8]),
+        "=r"(coda_context[9]), "=r"(coda_context[10]), "=r"(coda_context[11]),
+        "=r"(coda_context[12])
+      : "r"(&coda_context[0])
+      :);
+
+    __asm__ ("mov %0,%%rdi\n\t"
+            :
+            :"r"(theCoda.txmem)
+            :"%rdi");
+  __asm__(
+      "mov %1,%%rdi\n\t"
+      "mov %%rsp,%0\n\t"
+      "mov %2,%%rsp\n\t"
+      : "=r"(old_rsp)
+      : "r"(theCoda.txmem), "r"(&theCoda.txmem[1024*1024-1-100])
+      : "%rdi","%rsp");
+  __asm__(
+      "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_ep_%=:\n\t"
+      "cmpl  $7690,%%eax\n\t"
+      "jge    endloop_ep_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add    $4, %%rcx\n\t"
+      "jmp    loop_ep_%=\n\t"
+      "endloop_ep_%=:\n\t"
+      "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "add $1048064, %%rcx\n\t"
+      "loop_ep1_%=:\n\t"
+      "cmpl  $512,%%eax\n\t"
+      "jge    endloop_ep1_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add    $4, %%rcx\n\t"
+      "jmp    loop_ep1_%=\n\t"
+      "endloop_ep1_%=:\n\t"
+      "xbegin coda_abort_handler\n\t"
+      "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "loop_ip_%=:\n\t"
+      "cmpl  $7690,%%eax\n\t"
+      "jge    endloop_ip_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add    $4, %%rcx\n\t"
+      "jmp    loop_ip_%=\n\t"
+      "endloop_ip_%=:\n\t"
+      "mov $0, %%eax\n\t"
+      "mov %%rdi, %%rcx\n\t"
+      "add $1048064, %%rcx\n\t"
+      "loop_ip1_%=:\n\t"
+      "cmpl  $512,%%eax\n\t"
+      "jge    endloop_ip1_%=\n\t"
+      "movl   (%%rcx),%%r11d\n\t"
+      "addl   $1, %%eax\n\t"
+      "add    $4, %%rcx\n\t"
+      "jmp    loop_ip1_%=\n\t"
+      "endloop_ip1_%=:\n\t"
+      :::);
+}*/
 
 extern "C" {
-void coda_tx_abort(int code) { coda_aborts++; }
+void coda_tx_abort(int code) { EPrintf("aborts\n");coda_aborts++; }
 }

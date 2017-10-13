@@ -240,11 +240,11 @@ int SGX_CDECL main(int argc, char *argv[])
   retval =
       ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
   gettimeofday(&end, NULL);
-  /*for(int i=0;i<N;i++)
+  for(int i=0;i<N;i++)
       M_sim_output[M_perm[i]] = M_data[i];
   for(int i=0;i<N;i++) {
       if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
-  }*/
+  }
   printf("final result right\n");
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
