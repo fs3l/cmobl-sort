@@ -47,10 +47,10 @@ extern uint64_t coda_context[100];
 
 
 
-__attribute__((always_inline)) inline void coda_txbegin()
-//void coda_txbegin();
-{
-  
+//__attribute__((always_inline)) inline void coda_txbegin()
+void coda_txbegin();
+/*{
+    coda_stack_switch(); 
     __asm__(
       "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
@@ -101,7 +101,7 @@ __attribute__((always_inline)) inline void coda_txbegin()
       "add    $4, %%rcx\n\t"
       "jmp    loop_ep1_%=\n\t"
       "endloop_ep1_%=:\n\t"
-      "xbegin coda_abort_handler\n\t"
+     // "xbegin coda_abort_handler\n\t"
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
       "loop_ip_%=:\n\t"
@@ -124,7 +124,7 @@ __attribute__((always_inline)) inline void coda_txbegin()
       "jmp    loop_ip1_%=\n\t"
       "endloop_ip1_%=:\n\t"
       :::);
-}
+}*/
 
 __attribute__((always_inline)) inline void coda_txend()
 {

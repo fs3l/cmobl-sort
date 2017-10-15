@@ -26,6 +26,7 @@ void app_distribute_coda(HANDLE h1, HANDLE h2,HANDLE h3) {
   }
 }
 
+void fake(HANDLE i, INDEX j){}
 int coda_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
     int32_t* M_perm, int32_t M_perm_init, int32_t* M_output,
     int32_t M_output_init, int32_t M_output_size)
@@ -44,11 +45,11 @@ int coda_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
   //EPrintf("just begin and outputArray=%d and dataIter =%d and permIter=%d and Msize=%d\n",outputArray,dataIter,permIter,M_output_size);
   app_distribute_coda(dataIter,permIter,outputArray);
   coda_txend();
-  //EPrintf("just return and outputArray=%d\n",outputArray);
   for (int i = 0; i < SqrtN; i++)
     for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
+      int ret = nob_read_at(outputArray,i*(2*BLOWUPFACTOR+1)+j+1);
       M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR + i * 2 * BLOWUPFACTOR +
-        j] =  nob_read_at(outputArray,i * (2 * BLOWUPFACTOR + 1) + j + 1);
+        j] = ret;// nob_read_at(outputArray,i * (2 * BLOWUPFACTOR + 1) + j + 1);
     }
   //EPrintf("return from here and outputArray=%d\n",outputArray);
 }

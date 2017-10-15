@@ -113,10 +113,10 @@ void ob_write_next(HANDLE h, DATA d) {
   theCoda.txmem[offset+2]++;
   theCoda.txmem[target] = d;
 }
-/*
+
 void coda_txbegin()
 {
-   // uint64_t ret = coda_stack_switch();  
+    uint64_t ret = coda_stack_switch();  
    // EPrintf("ret=%lx, and rsp=%lx and rbp=%lx and %d, %d,%d\n",ret,old_rsp,old_rbp,theCoda.txmem[1024*1024-2],theCoda.txmem[1024*1024-3],theCoda.txmem[1024*1024-4]);
     __asm__(
       "mov %%rax,%0\n\t"
@@ -146,13 +146,6 @@ void coda_txbegin()
             :
             :"r"(theCoda.txmem)
             :"%rdi");
-  __asm__(
-      "mov %1,%%rdi\n\t"
-      "mov %%rsp,%0\n\t"
-      "mov %2,%%rsp\n\t"
-      : "=r"(old_rsp)
-      : "r"(theCoda.txmem), "r"(&theCoda.txmem[1024*1024-1-100])
-      : "%rdi","%rsp");
   __asm__(
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
@@ -198,7 +191,7 @@ void coda_txbegin()
       "jmp    loop_ip1_%=\n\t"
       "endloop_ip1_%=:\n\t"
       :::);
-}*/
+}
 
 extern "C" {
 void coda_tx_abort(int code) { EPrintf("aborts\n");coda_aborts++; }

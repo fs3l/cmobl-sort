@@ -10,7 +10,7 @@ coda_stack_switch:
   mov %rbp,%rax
   sub %rsp,%rax
   sub %rax,%r15
- # sub $300, %r15
+  sub $100, %r15
   mov %r15,%rdx
   mov $0, %r8
   loop_cy:
@@ -25,7 +25,7 @@ coda_stack_switch:
   loopend_cy:
   mov $0, %r8
   loop_old:
-  cmp $16,%r8  #8 for the ebp and 8 for the return address
+  cmp $100,%r8  #8 for the ebp and 8 for the return address
   jge loopend_old
   movb (%rsp,1),%cl
   movb %cl, (%rdx,1)
