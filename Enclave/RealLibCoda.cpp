@@ -117,7 +117,7 @@ void ob_write_next(HANDLE h, DATA d) {
 void coda_txbegin()
 {
     uint64_t ret = coda_stack_switch();  
-   // EPrintf("ret=%lx, and rsp=%lx and rbp=%lx and %d, %d,%d\n",ret,old_rsp,old_rbp,theCoda.txmem[1024*1024-2],theCoda.txmem[1024*1024-3],theCoda.txmem[1024*1024-4]);
+    EPrintf("ret=%lx, and rsp=%lx and rbp=%lx and %p\n",ret,old_rsp,old_rbp,&theCoda.txmem[1024*1024-4]);
     __asm__(
       "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"
@@ -159,16 +159,16 @@ void coda_txbegin()
       "endloop_ep_%=:\n\t"
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
-      "add $1048064, %%rcx\n\t"
+      "add $1048320, %%rcx\n\t"
       "loop_ep1_%=:\n\t"
-      "cmpl  $512,%%eax\n\t"
+      "cmpl  $256,%%eax\n\t"
       "jge    endloop_ep1_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
       "addl   $1, %%eax\n\t"
       "add    $4, %%rcx\n\t"
       "jmp    loop_ep1_%=\n\t"
       "endloop_ep1_%=:\n\t"
-      "xbegin coda_abort_handler\n\t"
+     // "xbegin coda_abort_handler\n\t"
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
       "loop_ip_%=:\n\t"
@@ -181,9 +181,9 @@ void coda_txbegin()
       "endloop_ip_%=:\n\t"
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
-      "add $1048064, %%rcx\n\t"
+      "add $1048320, %%rcx\n\t"
       "loop_ip1_%=:\n\t"
-      "cmpl  $512,%%eax\n\t"
+      "cmpl  $256,%%eax\n\t"
       "jge    endloop_ip1_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
       "addl   $1, %%eax\n\t"

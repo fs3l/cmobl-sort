@@ -128,9 +128,9 @@ void coda_txbegin();
 
 __attribute__((always_inline)) inline void coda_txend()
 {
-  __asm__("xend\n\t");
-  //        "mov %0, %%rsp\n\t"
-      //    "mov %1, %%rbp\n\t"
+  __asm__(//"xend\n\t");
+          "mov %%rsp, %0\n\t"
+          "mov %%rbp, %1\n\t"
     //     // "mov %%rbp,%%rsp\n\t"
          // "pop %%rbp\n\t"
          // "pop %%rsp\n\t"
@@ -139,9 +139,10 @@ __attribute__((always_inline)) inline void coda_txend()
         //  "pop %%rbp\n\t"
        //   "pop %%rsp\n\t"
        //   "pop %%rsp\n\t"
-       //   :
-       //   :"r"(old_rsp),"r"(old_rbp)
-       //   :);
+          :"=r"(old_rsp),"=r"(old_rbp)
+          :
+          :);
+  EPrintf("in finish and rsp=%p, rbp=%p\n",old_rsp);
  theCoda.cur_ob = 0;
     theCoda.cur_nob = 0;
     theCoda.cur_meta = 0;

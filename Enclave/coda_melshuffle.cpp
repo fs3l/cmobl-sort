@@ -26,7 +26,6 @@ void app_distribute_coda(HANDLE h1, HANDLE h2,HANDLE h3) {
   }
 }
 
-void fake(HANDLE i, INDEX j){}
 int coda_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
     int32_t* M_perm, int32_t M_perm_init, int32_t* M_output,
     int32_t M_output_init, int32_t M_output_size)
