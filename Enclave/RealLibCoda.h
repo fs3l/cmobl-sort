@@ -15,7 +15,7 @@ struct RealCoda
   // 32 - 79 - ob data rw
   // 80 - 607 - nob data
   // 1024*1023 + 512 - 1024*1024-1 stack frame
-  DATA txmem[1024*1024] __attribute__((aligned(64)));
+  DATA txmem[1024*1024] __attribute__((aligned(4096)));
   INDEX cur_ob;
   INDEX cur_nob;
   INDEX cur_meta;
@@ -128,9 +128,9 @@ void coda_txbegin();
 
 __attribute__((always_inline)) inline void coda_txend()
 {
-  __asm__(//"xend\n\t");
-          "mov %%rsp, %0\n\t"
-          "mov %%rbp, %1\n\t"
+  __asm__("xend\n\t");
+     //     "mov %%rsp, %0\n\t"
+     //     "mov %%rbp, %1\n\t"
     //     // "mov %%rbp,%%rsp\n\t"
          // "pop %%rbp\n\t"
          // "pop %%rsp\n\t"
@@ -139,10 +139,9 @@ __attribute__((always_inline)) inline void coda_txend()
         //  "pop %%rbp\n\t"
        //   "pop %%rsp\n\t"
        //   "pop %%rsp\n\t"
-          :"=r"(old_rsp),"=r"(old_rbp)
-          :
-          :);
-  EPrintf("in finish and rsp=%p, rbp=%p\n",old_rsp);
+       //   :"=r"(old_rsp),"=r"(old_rbp)
+       //   :
+       //   :);
  theCoda.cur_ob = 0;
     theCoda.cur_nob = 0;
     theCoda.cur_meta = 0;
