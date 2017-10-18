@@ -149,7 +149,8 @@ void coda_txbegin()
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
       "loop_ep_%=:\n\t"
-      "cmpl  $7690,%%eax\n\t"
+      "cmpl  $500,%%eax\n\t"
+   //   "cmpl  $0,%%eax\n\t"
       "jge    endloop_ep_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
       "addl   $1, %%eax\n\t"
@@ -171,7 +172,8 @@ void coda_txbegin()
       "mov $0, %%eax\n\t"
       "mov %%rdi, %%rcx\n\t"
       "loop_ip_%=:\n\t"
-      "cmpl  $7690,%%eax\n\t"
+     // "cmpl  $7690,%%eax\n\t"
+      "cmpl  $500,%%eax\n\t"
       "jge    endloop_ip_%=\n\t"
       "movl   (%%rcx),%%r11d\n\t"
       "addl   $1, %%eax\n\t"
@@ -193,5 +195,5 @@ void coda_txbegin()
 }
 
 extern "C" {
-void coda_tx_abort(int code) { EPrintf("aborts\n");coda_aborts++; }
+void coda_tx_abort(int code) { coda_aborts++; }
 }

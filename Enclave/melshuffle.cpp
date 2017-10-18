@@ -1074,9 +1074,9 @@ int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
   int32_t* swap;
   for (int stride = 2; stride < data_size; stride *= 2) {
     for (int j = 0; j < data_size; j += 2 * stride) {
-      apptx_merge(output + j, input + j, input + j + stride, stride);
-    }
-    // c_merge(output+j,input+j,input+j+stride,stride);}
+     // apptx_merge(output + j, input + j, input + j + stride, stride);
+     c_merge(output+j,input+j,input+j+stride,stride);}
+  //  }
     swap = input;
     input = output;
     output = swap;

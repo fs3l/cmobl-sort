@@ -2,12 +2,14 @@
 #include "./Enclave_t.h"
 #include "./RealLibCoda.h"
 int32_t g_interm[2 * BLOWUPFACTOR * N];
-
+extern int32_t coda_aborts;
 int checkOFlow(int32_t* aPerm);
 void genRandom(int* permutation);
 int verify(int32_t* data, int32_t* perm, int32_t* output);
 
 int32_t* apptxs_cleanup_bsort(int32_t* data, int32_t data_init,
+    int32_t data_size);
+int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
     int32_t data_size);
 void app_distribute_coda(HANDLE h1, HANDLE h2,HANDLE h3) {
   int32_t perm = 0;
@@ -68,6 +70,8 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
+  long sec_begin[1],sec_end[1],usec_begin[1],usec_end[1];
+  ocall_gettimenow(sec_begin,usec_begin);
   while (1) {
     genRandom(M_random);
     /* shuffle pass 1  PiR = shuffle(Pi,R);*/
@@ -88,7 +92,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     int pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR - 1; i += 2)
         if (ret[i] != -1) {
           M_rr[pos] = ret[i + 1];
@@ -114,7 +118,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR; i += 2)
         if (ret[i] != -1) {
           M_dr[pos] = ret[i + 1];
@@ -130,7 +134,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR; i += 2)
         if (ret[i] != -1) {
           M_output[pos] = ret[i + 1];
@@ -139,6 +143,10 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     }
     break;
   }
+  ocall_gettimenow(sec_end,usec_end);
+  EPrintf("time=%ld\n", ((sec_end[0] * 1000000 + usec_end[0]) -
+                   (sec_begin[0]* 1000000 + usec_begin[0])));
+  EPrintf("aborts=%d\n",coda_aborts);
 
   return 0;
 }
