@@ -18,6 +18,10 @@ INDEX cal_ob(INDEX offset) {
   return (offset/16)*1024 + offset%16+16;
 }
 
+INDEX cal_ob_write(INDEX offset) {
+  return (offset/48/)*1024 + offset%48 + 32;
+}
+
 INDEX cal_nob(INDEX offset) {
   return (offset/640)*1024 + offset%640 + 80;
 }
@@ -108,7 +112,7 @@ void ob_write_next(HANDLE h, DATA d) {
   INDEX ob_len = theCoda.txmem[offset+1];
   INDEX ob_cur = theCoda.txmem[offset+2];
   //calculate the target address
-  INDEX target = cal_ob(ob_start+ob_cur);
+  INDEX target = cal_ob_write(ob_start+ob_cur);
   //increment cur position for ob
   theCoda.txmem[offset+2]++;
   theCoda.txmem[target] = d;
