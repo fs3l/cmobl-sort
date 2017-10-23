@@ -1,1 +1,1 @@
-1, after segmentation fault, if rebuilt the memory, then it will recover??
+Switch stack cann't work properly?

@@ -41,16 +41,14 @@ int coda_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
   HANDLE outputArray = initialize_nob_array(output,(2*BLOWUPFACTOR+1)*SqrtN);
 
   coda_txbegin();
-  //EPrintf("just begin and outputArray=%d and dataIter =%d and permIter=%d and Msize=%d\n",outputArray,dataIter,permIter,M_output_size);
   app_distribute_coda(dataIter,permIter,outputArray);
   coda_txend();
   for (int i = 0; i < SqrtN; i++)
     for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
       int ret = nob_read_at(outputArray,i*(2*BLOWUPFACTOR+1)+j+1);
       M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR + i * 2 * BLOWUPFACTOR +
-        j] = ret;// nob_read_at(outputArray,i * (2 * BLOWUPFACTOR + 1) + j + 1);
+        j] = ret;//nob_read_at(outputArray,i * (2 * BLOWUPFACTOR + 1) + j + 1);
     }
-  //EPrintf("return from here and outputArray=%d\n",outputArray);
 }
 
 int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_size,

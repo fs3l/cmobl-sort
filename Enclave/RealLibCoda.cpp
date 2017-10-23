@@ -19,7 +19,7 @@ INDEX cal_ob(INDEX offset) {
 }
 
 INDEX cal_ob_write(INDEX offset) {
-  return (offset/48/)*1024 + offset%48 + 32;
+  return (offset/48)*1024 + offset%48 + 32;
 }
 
 INDEX cal_nob(INDEX offset) {
