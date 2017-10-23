@@ -27,7 +27,7 @@ struct RealCoda
     cur_nob = 0;
     cur_meta = 0;
     handle = -1;
-    //memset(txmem,0,sizeof(DATA)*4*1024);
+    memset(txmem,0,sizeof(DATA)*1024*1024);
   }
 };
 
