@@ -17,6 +17,7 @@ struct RealCoda
   // 1024*1023 + 512 - 1024*1024-1 stack frame
   DATA txmem[1024*1024] __attribute__((aligned(4096)));
   INDEX cur_ob;
+  INDEX cur_ob_rw;
   INDEX cur_nob;
   INDEX cur_meta;
   HANDLE handle;
@@ -25,6 +26,7 @@ struct RealCoda
   {
     cur_ob = 0;
     cur_nob = 0;
+    cur_ob_rw = 0;
     cur_meta = 0;
     handle = -1;
     memset(txmem,0,sizeof(DATA)*1024*1024);
@@ -32,12 +34,14 @@ struct RealCoda
 };
 
 HANDLE initialize_ob_iterator(DATA* data, LENGTH len);
+HANDLE initialize_ob_rw_iterator(DATA* data, LENGTH len);
 HANDLE initialize_nob_array(DATA* data, LENGTH len);
 
 DATA nob_read_at(HANDLE h, INDEX pos);
 void nob_write_at(HANDLE h, INDEX pos, DATA d);
 DATA ob_read_next(HANDLE h);
-void ob_write_next(HANDLE h, DATA d);
+void ob_rw_write_next(HANDLE h, DATA d);
+DATA ob_rw_read_next(HANDLE h);
 
 extern "C" {uint64_t coda_stack_switch();}
 extern struct RealCoda theCoda;
@@ -143,6 +147,7 @@ __attribute__((always_inline)) inline void coda_txend()
        //   :
        //   :);
  theCoda.cur_ob = 0;
+ theCoda.cur_ob_rw = 0;
     theCoda.cur_nob = 0;
     theCoda.cur_meta = 0;
     theCoda.handle = -1;

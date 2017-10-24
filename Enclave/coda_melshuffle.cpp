@@ -1,3 +1,8 @@
+/*
+ * Author: Ju Chen
+ * 10/24/2017
+*/
+
 #include "./Enclave.h"
 #include "./Enclave_t.h"
 #include "./RealLibCoda.h"

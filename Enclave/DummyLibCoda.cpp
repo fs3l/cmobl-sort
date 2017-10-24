@@ -41,20 +41,24 @@ DummyObIterator::~DummyObIterator() {
 }
 
 int32_t DummyNobArray::read_at(size_t pos) const {
+  EPrintf("in %s and pos=%d\n",__func__,pos);
   return cur->nob_mem[cur->nob_start[handle]+pos];
 }
 
 void DummyNobArray::write_at(size_t pos, int32_t value) {
+  EPrintf("in %s and pos=%d,value=%d\n",__func__,pos,value);
   cur->nob_mem[cur->nob_start[handle]+pos] = value;
 }
 
 int32_t DummyObIterator::read_next() {
+  EPrintf("in %s\n",__func__);
   int32_t res =  cur->ob_mem[cur->ob_start[handle]+cur->ob_pos[handle]];
   cur->ob_pos[handle]++;
   return res;
 }
 
 void DummyObIterator::write_next(int32_t value) {
+  EPrintf("in %s and value=%d\n",__func__,value);
   cur->ob_mem[cur->ob_start[handle]+cur->ob_pos[handle]]=value;
   cur->ob_pos[handle]++;
 }
