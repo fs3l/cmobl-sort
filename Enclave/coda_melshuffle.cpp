@@ -14,6 +14,8 @@ int verify(int32_t* data, int32_t* perm, int32_t* output);
 
 int32_t* apptxs_cleanup_bsort(int32_t* data, int32_t data_init,
     int32_t data_size);
+int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
+    int32_t data_size);
 void app_distribute_coda(HANDLE h1, HANDLE h2,HANDLE h3) {
   int32_t perm = 0;
   int32_t data = 0;
@@ -91,7 +93,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     int pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR - 1; i += 2)
         if (ret[i] != -1) {
           M_rr[pos] = ret[i + 1];
@@ -117,7 +119,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR; i += 2)
         if (ret[i] != -1) {
           M_dr[pos] = ret[i + 1];
@@ -133,7 +135,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     pos = 0;
     for (int j = 0; j < SqrtN; j++) {
       int32_t* ret =
-        apptxs_cleanup_bsort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
+        apptxs_cleanup_msort(g_interm, j, 2 * SqrtN * BLOWUPFACTOR);
       for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR; i += 2)
         if (ret[i] != -1) {
           M_output[pos] = ret[i + 1];

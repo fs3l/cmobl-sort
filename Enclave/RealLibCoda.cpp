@@ -233,5 +233,5 @@ void coda_txbegin()
 }
 
 extern "C" {
-  void coda_tx_abort(int code) { EPrintf("aborts\n");coda_aborts++; }
+  void coda_tx_abort(int code) { coda_aborts++; }
 }
