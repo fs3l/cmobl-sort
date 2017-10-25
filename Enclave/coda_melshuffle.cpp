@@ -6,12 +6,15 @@
 #include "./Enclave.h"
 #include "./Enclave_t.h"
 #include "./RealLibCoda.h"
+
+
 int32_t g_interm[2 * BLOWUPFACTOR * N];
 
 int checkOFlow(int32_t* aPerm);
 void genRandom(int* permutation);
 int verify(int32_t* data, int32_t* perm, int32_t* output);
 
+int compare(const void* a, const void* b); 
 int32_t* apptxs_cleanup_bsort(int32_t* data, int32_t data_init,
     int32_t data_size);
 int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
@@ -73,6 +76,9 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
   int M_random[N];
   int M_rr[N];
   int M_dr[N];
+  long sec_begin[1], sec_end[1], usec_begin[1], usec_end[1];
+  ocall_gettimenow(sec_begin, usec_begin);
+  
   while (1) {
     genRandom(M_random);
     /* shuffle pass 1  PiR = shuffle(Pi,R);*/
@@ -144,6 +150,8 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     }
     break;
   }
-
+  qsort(M_output, N, sizeof(int), compare);
+  ocall_gettimenow(sec_end, usec_end);
+  EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_end[0]*1000000+usec_begin[0]));
   return 0;
 }
