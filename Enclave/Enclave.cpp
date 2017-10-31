@@ -7,6 +7,7 @@
 
 #include "./Enclave.h"
 #include "./Enclave_t.h" /* bar*/
+#include "./cache_shuffle.h"
 #include "./coda_melshuffle.h"
 #include "./sort.h"
 int real_coda_shuffle();
@@ -34,9 +35,10 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
                   int c_size)
 {
   // melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size, N);
-  merge_sort_test();
+  // merge_sort_test();
   // coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
   // real_coda_shuffle();
+  cache_shuffle_test();
 }
 
 /* ecall_sgx_cpuid:
