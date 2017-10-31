@@ -7,8 +7,8 @@
 #include "./RealLibCoda.h"
 #include "./cache_shuffle.h"
 
-//#define DEBUG_PRINTF(...)
-#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
+#define DEBUG_PRINTF(...)
+//#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
 #define EPSILON 10
 #define SPRAY_MAP_MAX_LEN 10  // > (1 + 1/EPSILON) ln(2e)
@@ -34,13 +34,25 @@ public:
     for (int32_t i = 0; i < num_of_map; ++i) data[size_idx(i)] = 0;
   }
   ~CacheShuffleMap() { delete[] data; }
+  __attribute__((always_inline)) inline void init_nob()
+  {
+    nob = initialize_nob_array(data, 2 + data[0] * (data[1] * 2 + 1));
+  }
+  __attribute__((always_inline)) inline void reset_nob()
+  {
+    for (int32_t i = 2; i < 2 + data[0] * (data[1] * 2 + 1); ++i)
+      data[i] = nob_read_at(nob, i);
+  }
+
   __attribute__((always_inline)) inline int32_t num_of_map() const
   {
-    return data[0];
+    // return data[0];
+    return nob_read_at(nob, 0);
   }
   __attribute__((always_inline)) inline int32_t max_len() const
   {
-    return data[1];
+    // return data[1];
+    return nob_read_at(nob, 1);
   }
   __attribute__((always_inline)) inline int32_t size_idx(int32_t id) const
   {
@@ -64,7 +76,8 @@ public:
 
   __attribute__((always_inline)) inline int32_t size(int32_t id) const
   {
-    return data[size_idx(id)];
+    // return data[size_idx(id)];
+    return nob_read_at(nob, size_idx(id));
   }
   __attribute__((always_inline)) inline bool empty(int32_t id) const
   {
@@ -75,29 +88,36 @@ public:
                                                  int32_t perm)
   {
     int32_t cur_size = size(id);
-    data[value_idx(id, cur_size)] = value;
-    data[perm_idx(id, cur_size)] = perm;
-    data[size_idx(id)] = cur_size + 1;
+    // data[value_idx(id, cur_size)] = value;
+    // data[perm_idx(id, cur_size)] = perm;
+    // data[size_idx(id)] = cur_size + 1;
+    nob_write_at(nob, value_idx(id, cur_size), value);
+    nob_write_at(nob, perm_idx(id, cur_size), perm);
+    nob_write_at(nob, size_idx(id), cur_size + 1);
   }
   __attribute__((always_inline)) inline void top(int32_t id, int32_t* value,
                                                  int32_t* perm) const
   {
     int32_t cur_size = size(id);
     if (cur_size <= 0) abort();
-    *value = data[value_idx(id, cur_size - 1)];
-    *perm = data[perm_idx(id, cur_size - 1)];
+    //*value = data[value_idx(id, cur_size - 1)];
+    //*perm = data[perm_idx(id, cur_size - 1)];
+    *value = nob_read_at(nob, value_idx(id, cur_size - 1));
+    *perm = nob_read_at(nob, perm_idx(id, cur_size - 1));
   }
   __attribute__((always_inline)) inline void pop(int32_t id)
   {
     int32_t cur_size = size(id);
     if (cur_size <= 0) abort();
-    data[size_idx(id)] = cur_size - 1;
+    // data[size_idx(id)] = cur_size - 1;
+    nob_write_at(nob, size_idx(id), cur_size - 1);
   }
 
 private:
   // data layout: [num_of_map] [max_len] [m_1] .... [m_n]
   //    m layout: [cur_size] [value_1] [perm_1] ... [value_m] [perm_m]
   int32_t* data;
+  HANDLE nob;
 };
 
 class CacheShuffleData
@@ -128,6 +148,23 @@ public:
     delete[] arr;
     delete[] perm;
   }
+  __attribute__((always_inline)) inline void init_read_ob()
+  {
+    arr_ob = initialize_ob_iterator(arr, len);
+    perm_ob = initialize_ob_iterator(perm, len);
+  }
+  __attribute__((always_inline)) inline void init_rw_ob()
+  {
+    arr_ob = initialize_ob_rw_iterator(arr, len);
+    perm_ob = initialize_ob_rw_iterator(perm, len);
+  }
+  __attribute__((always_inline)) inline void reset_rw_ob()
+  {
+    for (int32_t i = 0; i < len; ++i) {
+      arr[i] = ob_rw_read_next(arr_ob);
+      perm[i] = ob_rw_read_next(perm_ob);
+    }
+  }
 
   void print() const
   {
@@ -155,7 +192,7 @@ public:
   }
 
   __attribute__((always_inline)) inline CacheShuffleData** spary(
-      const int32_t in_partitions, const int32_t out_partitions) const
+      const int32_t in_partitions, const int32_t out_partitions)
   {
     const int32_t in_p_len = (int32_t)ceil((double)len / (double)in_partitions);
     const int32_t out_p_len =
@@ -185,14 +222,19 @@ public:
     }
 
     CacheShuffleMap nob_map(out_partitions, min(SPRAY_MAP_MAX_LEN, out_p_len));
+    nob_map.init_nob();
+    init_read_ob();
+    for (i = 0; i < out_partitions; ++i) result[i]->init_rw_ob();
 
-    // tx_begin
+    coda_txbegin();
     for (i = 0; i < in_partitions; ++i) {
       for (j = 0; j < in_p_len; ++j) {
         in_idx = i * in_p_len + j;
         if (in_idx < len) {
-          v = arr[in_idx];
-          p = perm[in_idx];
+          // v = arr[in_idx];
+          // p = perm[in_idx];
+          v = ob_read_next(arr_ob);
+          p = ob_read_next(perm_ob);
           if (p != -1) nob_map.add((p - begin_idx) / out_p_idx_len, v, p);
         }
       }
@@ -203,26 +245,42 @@ public:
           nob_map.top(j, &v, &p);
           nob_map.pop(j);
         }
-        result[j]->arr[i] = v;
-        result[j]->perm[i] = p;
+        // result[j]->arr[i] = v;
+        // result[j]->perm[i] = p;
+        ob_rw_write_next(result[j]->arr_ob, v);
+        ob_rw_write_next(result[j]->perm_ob, p);
       }
     }
-    // tx_reset
+    coda_txend();
+
+    nob_map.reset_nob();
+    for (i = 0; i < out_partitions; ++i) result[i]->reset_rw_ob();
+
+    nob_map.init_nob();
+    for (i = 0; i < out_partitions; ++i) result[i]->init_rw_ob();
+
+    coda_txbegin();
     for (i = 0; i < out_partitions; ++i) {
       for (j = 0; j < out_p_len; ++j) {
-        v = result[i]->arr[j];
-        p = result[i]->perm[j];
+        // v = result[i]->arr[j];
+        // p = result[i]->perm[j];
+        v = ob_rw_read_next(result[i]->arr_ob);
+        p = ob_rw_read_next(result[i]->perm_ob);
         if (p == -1 && !nob_map.empty(i)) {
           nob_map.top(i, &v, &p);
           nob_map.pop(i);
         }
-        result[i]->arr[j] = v;
-        result[i]->perm[j] = p;
+        // result[i]->arr[j] = v;
+        // result[i]->perm[j] = p;
+        ob_rw_write_next(result[i]->arr_ob, v);
+        ob_rw_write_next(result[i]->perm_ob, p);
       }
 
       if (!nob_map.empty(i)) abort();
     }
-    // tx_end
+    coda_txend();
+
+    for (i = 0; i < out_partitions; ++i) result[i]->reset_rw_ob();
 
     return result;
   }
@@ -251,6 +309,7 @@ public:
   int32_t len, begin_idx, end_idx;
   int32_t* arr;
   int32_t* perm;
+  HANDLE arr_ob, perm_ob;
 };
 
 void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
@@ -306,7 +365,8 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
 
   for (int32_t i = 0; i < temp_len; ++i) {
     int32_t j, v, p, real_v;
-    // tx_begin
+    temp[i]->init_read_ob();
+    coda_txbegin();
     for (j = 0; j < temp[i]->len; ++j) {
       v = temp[i]->arr[j];
       p = temp[i]->perm[j];
@@ -314,8 +374,8 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
         real_v = v;
       }
     }
+    coda_txend();
     arr_out[i] = real_v;
-    // tx_end
     delete temp[i];
   }
 
@@ -345,7 +405,7 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 100;
+  int32_t len = 2;
   int32_t* data = gen_arr(len);
   print_arr(data, len);
   int32_t* data_out = new int32_t[len];
