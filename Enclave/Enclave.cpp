@@ -31,11 +31,11 @@ int EPrintf(const char *fmt, ...)
  *   Uses malloc/free to allocate/free trusted memory.
  */
 int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
-    int c_size)
+                  int c_size)
 {
   // melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size, N);
-  //sort(10);
-  coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
+  merge_sort_test();
+  // coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
   // real_coda_shuffle();
 }
 

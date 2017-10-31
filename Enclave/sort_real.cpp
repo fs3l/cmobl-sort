@@ -242,7 +242,7 @@ done:
   delete[] rhs_out;
 }
 
-int* random_arr(const int len)
+static int* random_arr(const int len)
 {
   unsigned int rand_result;
   sgx_read_rand((unsigned char*)&rand_result, 4);
@@ -255,15 +255,16 @@ int* random_arr(const int len)
   return out;
 }
 
-void print_arr(const int* arr, const int len)
+static void print_arr(const int* arr, const int len)
 {
   int i;
   for (i = 0; i < len; ++i) EPrintf("%d ", arr[i]);
   EPrintf("\n");
 }
 
-int sort(int len)
+void merge_sort_test()
 {
+  int len = 10;
   // int32_t* a = random_arr(len);
   int32_t a[10] = {99, 96, 1, 2, 3, 100, 56, 24, 78, 21};
   print_arr(a, len);
@@ -272,5 +273,4 @@ int sort(int len)
   print_arr(b, len);
   // delete[] a;
   delete[] b;
-  return 0;
 }
