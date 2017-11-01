@@ -265,12 +265,11 @@ static void print_arr(const int* arr, const int len)
 void merge_sort_test()
 {
   int len = 10;
-  // int32_t* a = random_arr(len);
-  int32_t a[10] = {99, 96, 1, 2, 3, 100, 56, 24, 78, 21};
-  print_arr(a, len);
+  int32_t* a = random_arr(len);
+// print_arr(a, len);
   int32_t* b = new int32_t[len];
   merge_sort(a, b, len);
-  print_arr(b, len);
-  // delete[] a;
+// print_arr(b, len);
+  delete[] a;
   delete[] b;
 }

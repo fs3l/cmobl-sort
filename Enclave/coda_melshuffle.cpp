@@ -152,6 +152,6 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
   }
   qsort(M_output, N, sizeof(int), compare);
   ocall_gettimenow(sec_end, usec_end);
-  EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_end[0]*1000000+usec_begin[0]));
+  EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_begin[0]*1000000+usec_begin[0]));
   return 0;
 }
