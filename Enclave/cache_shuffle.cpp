@@ -7,8 +7,8 @@
 #include "./RealLibCoda.h"
 #include "./cache_shuffle.h"
 
-#define DEBUG_PRINTF(...)
-//#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
+//#define DEBUG_PRINTF(...)
+#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
 #define EPSILON 10
 #define SPRAY_MAP_MAX_LEN 10  // > (1 + 1/EPSILON) ln(2e)
@@ -28,8 +28,9 @@ class CacheShuffleMap
 public:
   CacheShuffleMap(int32_t num_of_map, int32_t max_len)
   {
-    data = new int32_t[2 + num_of_map * (max_len * 2 + 1)];
-    memset(data, 0, sizeof(data));
+    int32_t data_len = 2 + num_of_map * (max_len * 2 + 1);
+    data = new int32_t[data_len];
+    memset(data, 0, sizeof(int32_t) * data_len);
     data[0] = num_of_map;
     data[1] = max_len;
   }
@@ -231,6 +232,8 @@ public:
       int32_t* out_perm = new int32_t[out_partitions];
       nob_map.init_nob();
       init_read_ob(i * in_p_len, min(in_p_len, len - (i - 1) * in_p_len));
+      HANDLE in_arr_ob = this->arr_ob;
+      HANDLE in_perm_ob = this->perm_ob;
       HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
       HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
       coda_txbegin();
@@ -239,8 +242,8 @@ public:
         if (in_idx < len) {
           // v = arr[in_idx];
           // p = perm[in_idx];
-          v = ob_read_next(arr_ob);
-          p = ob_read_next(perm_ob);
+          v = ob_read_next(in_arr_ob);
+          p = ob_read_next(in_perm_ob);
           if (p != -1) nob_map.add((p - begin_idx) / out_p_idx_len, v, p);
         }
       }
