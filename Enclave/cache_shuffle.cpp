@@ -150,23 +150,25 @@ public:
     delete[] perm;
   }
   __attribute__((always_inline)) inline void init_read_ob(int32_t ob_offset,
-                                                          int32_t ob_len)
+                                                          int32_t ob_len,
+                                                          HANDLE* arr_ob,
+                                                          HANDLE* perm_ob)
   {
-    this->ob_offset = ob_offset;
-    this->ob_len = ob_len;
-    arr_ob = initialize_ob_iterator(arr + ob_offset, ob_len);
-    perm_ob = initialize_ob_iterator(perm + ob_offset, ob_len);
+    *arr_ob = initialize_ob_iterator(arr + ob_offset, ob_len);
+    *perm_ob = initialize_ob_iterator(perm + ob_offset, ob_len);
   }
-  __attribute__((always_inline)) inline void init_rw_ob()
+  __attribute__((always_inline)) inline void init_rw_ob(HANDLE* arr_ob,
+                                                        HANDLE* perm_ob)
   {
-    arr_ob = initialize_ob_rw_iterator(arr, len);
-    perm_ob = initialize_ob_rw_iterator(perm, len);
+    *arr_ob = initialize_ob_rw_iterator(arr, len);
+    *perm_ob = initialize_ob_rw_iterator(perm, len);
   }
-  __attribute__((always_inline)) inline void reset_rw_ob()
+  __attribute__((always_inline)) inline void reset_rw_ob(HANDLE* arr_ob,
+                                                         HANDLE* perm_ob)
   {
     for (int32_t i = 0; i < len; ++i) {
-      arr[i] = ob_rw_read_next(arr_ob);
-      perm[i] = ob_rw_read_next(perm_ob);
+      arr[i] = ob_rw_read_next(*arr_ob);
+      perm[i] = ob_rw_read_next(*perm_ob);
     }
   }
 
@@ -231,9 +233,9 @@ public:
       int32_t* out_arr = new int32_t[out_partitions];
       int32_t* out_perm = new int32_t[out_partitions];
       nob_map.init_nob();
-      init_read_ob(i * in_p_len, min(in_p_len, len - (i - 1) * in_p_len));
-      HANDLE in_arr_ob = this->arr_ob;
-      HANDLE in_perm_ob = this->perm_ob;
+      HANDLE in_arr_ob, in_perm_ob;
+      init_read_ob(i * in_p_len, min(in_p_len, len - (i - 1) * in_p_len),
+                   &in_arr_ob, &in_perm_ob);
       HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
       HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
       coda_txbegin();
@@ -273,29 +275,29 @@ public:
 
     for (i = 0; i < out_partitions; ++i) {
       nob_map.init_nob();
-      result[i]->init_rw_ob();
-      HANDLE result_i_arr_ob = result[i]->arr_ob;
-      HANDLE result_i_perm_ob = result[i]->perm_ob;
+      HANDLE in_arr_ob, in_perm_ob, out_arr_ob, out_perm_ob;
+      result[i]->init_read_ob(0, out_p_len, &in_arr_ob, &in_perm_ob);
+      result[i]->init_rw_ob(&out_arr_ob, &out_perm_ob);
       coda_txbegin();
       for (j = 0; j < out_p_len; ++j) {
         // v = result[i]->arr[j];
         // p = result[i]->perm[j];
-        v = ob_rw_read_next(result_i_arr_ob);
-        p = ob_rw_read_next(result_i_perm_ob);
+        v = ob_read_next(in_arr_ob);
+        p = ob_read_next(in_perm_ob);
         if (p == -1 && !nob_map.empty(i)) {
           nob_map.top(i, &v, &p);
           nob_map.pop(i);
         }
         // result[i]->arr[j] = v;
         // result[i]->perm[j] = p;
-        ob_rw_write_next(result_i_arr_ob, v);
-        ob_rw_write_next(result_i_perm_ob, p);
+        ob_rw_write_next(out_arr_ob, v);
+        ob_rw_write_next(out_perm_ob, p);
       }
 
       if (!nob_map.empty(i)) abort();
       coda_txend();
       nob_map.reset_nob();
-      result[i]->reset_rw_ob();
+      result[i]->reset_rw_ob(&out_arr_ob, &out_perm_ob);
     }
 
     return result;
@@ -325,8 +327,6 @@ public:
   int32_t len, begin_idx, end_idx;
   int32_t* arr;
   int32_t* perm;
-  HANDLE arr_ob, perm_ob;
-  int32_t ob_offset, ob_len;
 };
 
 void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
@@ -382,11 +382,14 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
 
   for (int32_t i = 0; i < temp_len; ++i) {
     int32_t j, v, p, real_v;
-    temp[i]->init_read_ob(0, temp[i]->len);
+    HANDLE arr_ob, perm_ob;
+    temp[i]->init_read_ob(0, temp[i]->len, &arr_ob, &perm_ob);
     coda_txbegin();
     for (j = 0; j < temp[i]->len; ++j) {
-      v = temp[i]->arr[j];
-      p = temp[i]->perm[j];
+      // v = temp[i]->arr[j];
+      // p = temp[i]->perm[j];
+      v = ob_read_next(arr_ob);
+      p = ob_read_next(perm_ob);
       if (p != -1) {
         real_v = v;
       }
