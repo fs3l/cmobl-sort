@@ -302,9 +302,9 @@ public:
   }
 
   __attribute__((always_inline)) inline int32_t compute_spary_in_partitions(
-      int32_t S)
+      int32_t s)
   {
-    return min(S, len);
+    return min(s, len);
   }
   __attribute__((always_inline)) inline int32_t compute_spary_out_partitions(
       int32_t Q)
@@ -344,7 +344,7 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   CacheShuffleData* data = new CacheShuffleData(len, 0, len, arr_in, perm_in);
   int32_t temp_len = data->compute_spary_out_partitions(Q);
   CacheShuffleData** temp =
-      data->spary(data->compute_spary_in_partitions(S), temp_len);
+      data->spary(data->compute_spary_in_partitions(len / S), temp_len);
   delete data;
 
   // rspary
