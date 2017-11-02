@@ -45,73 +45,49 @@ public:
       data[i] = nob_read_at(nob, i);
   }
 
-  __attribute__((always_inline)) inline int32_t num_of_map() const
-  {
-    // return data[0];
-    return nob_read_at(nob, 0);
-  }
-  __attribute__((always_inline)) inline int32_t max_len() const
-  {
-    // return data[1];
-    return nob_read_at(nob, 1);
-  }
-  __attribute__((always_inline)) inline int32_t size_idx(int32_t id) const
-  {
-    if (id >= num_of_map()) abort();
-    return 2 + id * (max_len() * 2 + 1);
-  }
-  __attribute__((always_inline)) inline int32_t value_idx(
-      int32_t id, int32_t value_id) const
-  {
-    if (id >= num_of_map()) abort();
-    if (value_id >= max_len()) abort();
-    return 3 + id * (max_len() * 2 + 1) + value_id * 2;
-  }
-  __attribute__((always_inline)) inline int32_t perm_idx(int32_t id,
-                                                         int32_t value_id) const
-  {
-    if (id >= num_of_map()) abort();
-    if (value_id >= max_len()) abort();
-    return 4 + id * (max_len() * 2 + 1) + value_id * 2;
-  }
-
-  __attribute__((always_inline)) inline int32_t size(int32_t id) const
-  {
-    // return data[size_idx(id)];
-    return nob_read_at(nob, size_idx(id));
-  }
   __attribute__((always_inline)) inline bool empty(int32_t id) const
   {
-    return size(id) == 0;
+    int32_t max_len = nob_read_at(nob, 1);
+    return nob_read_at(nob, 2 + id * (max_len * 2 + 1)) == 0;
   }
 
   __attribute__((always_inline)) inline void add(int32_t id, int32_t value,
                                                  int32_t perm)
   {
-    int32_t cur_size = size(id);
+    // int32_t cur_size = size(id);
     // data[value_idx(id, cur_size)] = value;
     // data[perm_idx(id, cur_size)] = perm;
     // data[size_idx(id)] = cur_size + 1;
-    nob_write_at(nob, value_idx(id, cur_size), value);
-    nob_write_at(nob, perm_idx(id, cur_size), perm);
-    nob_write_at(nob, size_idx(id), cur_size + 1);
+    int32_t max_len = nob_read_at(nob, 1);
+    int32_t size_idx = 2 + id * (max_len * 2 + 1);
+    int32_t cur_size = nob_read_at(nob, size_idx);
+    if (cur_size >= max_len) abort();
+    int32_t value_idx = 1 + size_idx + cur_size * 2;
+    nob_write_at(nob, value_idx, value);
+    nob_write_at(nob, value_idx + 1, perm);
+    nob_write_at(nob, size_idx, cur_size + 1);
   }
   __attribute__((always_inline)) inline void top(int32_t id, int32_t* value,
                                                  int32_t* perm) const
   {
-    int32_t cur_size = size(id);
-    if (cur_size <= 0) abort();
     //*value = data[value_idx(id, cur_size - 1)];
     //*perm = data[perm_idx(id, cur_size - 1)];
-    *value = nob_read_at(nob, value_idx(id, cur_size - 1));
-    *perm = nob_read_at(nob, perm_idx(id, cur_size - 1));
+    int32_t max_len = nob_read_at(nob, 1);
+    int32_t size_idx = 2 + id * (max_len * 2 + 1);
+    int32_t cur_size = nob_read_at(nob, size_idx);
+    if (cur_size <= 0) abort();
+    int32_t value_idx = 1 + size_idx + (cur_size - 1) * 2;
+    *value = nob_read_at(nob, value_idx);
+    *perm = nob_read_at(nob, value_idx + 1);
   }
   __attribute__((always_inline)) inline void pop(int32_t id)
   {
-    int32_t cur_size = size(id);
-    if (cur_size <= 0) abort();
     // data[size_idx(id)] = cur_size - 1;
-    nob_write_at(nob, size_idx(id), cur_size - 1);
+    int32_t max_len = nob_read_at(nob, 1);
+    int32_t size_idx = 2 + id * (max_len * 2 + 1);
+    int32_t cur_size = nob_read_at(nob, size_idx);
+    if (cur_size <= 0) abort();
+    nob_write_at(nob, size_idx, cur_size - 1);
   }
 
 private:
