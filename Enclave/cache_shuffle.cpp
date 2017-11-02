@@ -10,8 +10,8 @@
 //#define DEBUG_PRINTF(...)
 #define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
-#define EPSILON 10
-#define SPRAY_MAP_MAX_LEN 10  // > (1 + 1/EPSILON) ln(2e)
+#define EPSILON 0.5
+#define SPRAY_MAP_MAX_LEN 30  // > (1 + 1/EPSILON) ln(2e)
 
 static __attribute__((always_inline)) inline int32_t min(int32_t a, int32_t b)
 {
