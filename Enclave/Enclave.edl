@@ -21,6 +21,7 @@ enclave {
         /*can't use pointer, instead one-element array */
         void ocall_printf([in, string] const char *str, [out] int ret[1]);
         void ocall_gettimenow([out] long sec[1], [out] long usec[1]);
+        void ocall_abort([in, string] const char* message);
     };
 
 };

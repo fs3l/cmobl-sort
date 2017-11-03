@@ -26,6 +26,8 @@ extern sgx_enclave_id_t global_eid; /* global enclave id */
 extern "C" {
 #endif
 
+void ocall_abort(const char* message);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -25,6 +25,7 @@ extern "C" {
 //#define BLOWUPFACTOR 2*log(N)
 
 int EPrintf(const char *fmt, ...);
+void Eabort(const char *fmt, ...);
 
 #if defined(__cplusplus)
 }

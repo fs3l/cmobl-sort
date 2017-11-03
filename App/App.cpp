@@ -191,6 +191,12 @@ void ocall_printf(const char *str, int ret[1])
   ret[0] = 13;
 }
 
+void ocall_abort(const char* message)
+{
+    fprintf(stderr, "abort %s\n", message);
+    abort();
+}
+
 void swap(int *a, int *b)
 {
   int temp = *a;

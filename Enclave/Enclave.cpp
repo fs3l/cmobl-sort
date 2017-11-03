@@ -28,6 +28,16 @@ int EPrintf(const char *fmt, ...)
   return ret[0];
 }
 
+void Eabort(const char *fmt, ...)
+{
+  char buf[BUFSIZ] = {'\0'};
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, BUFSIZ, fmt, ap);
+  va_end(ap);
+  ocall_abort(buf);
+}
+
 int32_t* msort(int32_t* data, int32_t data_size);
 /* ecall_foo:
  *   Uses malloc/free to allocate/free trusted memory.
