@@ -61,7 +61,7 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size >= max_len) abort();
+    if (cur_size >= max_len) Eabort("map full");
     int32_t value_idx = 1 + size_idx + cur_size * 2;
     nob_write_at(nob, value_idx, value);
     nob_write_at(nob, value_idx + 1, perm);
@@ -75,7 +75,7 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size <= 0) abort();
+    if (cur_size <= 0) Eabort("map empty");
     int32_t value_idx = 1 + size_idx + (cur_size - 1) * 2;
     *value = nob_read_at(nob, value_idx);
     *perm = nob_read_at(nob, value_idx + 1);
@@ -86,7 +86,7 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size <= 0) abort();
+    if (cur_size <= 0) Eabort("map empty");
     nob_write_at(nob, size_idx, cur_size - 1);
   }
 
@@ -200,7 +200,7 @@ public:
           new CacheShuffleData(out_p_len, result_i_begin_idx, result_i_end_idx);
       DEBUG_PRINTF("out[%d] idx=[%d, %d)\n", i, result[i]->begin_idx,
                    result[i]->end_idx);
-      if (result[i]->begin_idx >= result[i]->end_idx) abort();
+      if (result[i]->begin_idx >= result[i]->end_idx) Eabort("invalid partition");
     }
 
     CacheShuffleMap nob_map(out_partitions, min(SPRAY_MAP_MAX_LEN, out_p_len));
@@ -270,7 +270,7 @@ public:
         ob_rw_write_next(out_perm_ob, p);
       }
 
-      if (!nob_map.empty(i)) abort();
+      if (!nob_map.empty(i)) Eabort("map not empty");
       coda_txend();
       nob_map.reset_nob();
       result[i]->reset_rw_ob(&out_arr_ob, &out_perm_ob);
@@ -354,7 +354,7 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   }
 
   DEBUG_PRINTF("temp_len=%d\n", temp_len);
-  if (temp_len != len) abort();
+  if (temp_len != len) Eabort("invalid partition size");
 
   for (int32_t i = 0; i < temp_len; ++i) {
     int32_t j, v, p, real_v;

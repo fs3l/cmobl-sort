@@ -60,7 +60,7 @@ public:
     int32_t max_len = get_max_len();
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == max_len) abort();
+    if (cur_len == max_len) Eabort("sort queue full");
     nob_write_at(nob, (front_idx + cur_len) % max_len + 3, val);
     ++cur_len;
     set_cur_len(cur_len);
@@ -69,7 +69,7 @@ public:
   {
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == 0) abort();
+    if (cur_len == 0) Eabort("sort queue empty");
     return nob_read_at(nob, front_idx + 3);
   }
   __attribute__((always_inline)) inline void dequeue()
@@ -77,7 +77,7 @@ public:
     int32_t max_len = get_max_len();
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == 0) abort();
+    if (cur_len == 0) Eabort("sort queue empty");
     --cur_len;
     front_idx = (front_idx + 1) % max_len;
     set_cur_len(cur_len);
@@ -197,13 +197,13 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
         arr_out_idx++;
         ob_write++;
       } else {
-        if (i < lhs_len || i < rhs_len) abort();
+        if (i < lhs_len || i < rhs_len) Eabort("queue empty");
         goto done;
       }
     }
   }
 
-  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) abort();
+  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) Eabort("unprocessed data");
 
 done:
 
