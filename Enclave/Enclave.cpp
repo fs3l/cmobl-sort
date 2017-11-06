@@ -10,6 +10,7 @@
 #include "./cache_shuffle.h"
 #include "./coda_melshuffle.h"
 #include "./sort.h"
+#include "./expansion.h"
 int real_coda_shuffle();
 
 /*
@@ -53,10 +54,11 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
   long sec_begin[1], sec_end[1], usec_begin[1], usec_end[1];
   ocall_gettimenow(sec_begin, usec_begin);
 //  cache_shuffle_test();
-  merge_sort_test();
+//  merge_sort_test();
 //  coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
   // real_coda_shuffle();
 //  res= msort(a,1024);
+  expand();
   ocall_gettimenow(sec_end, usec_end);
   EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_begin[0]*1000000+usec_begin[0]));
 //  for (int i=0;i<64;i++)
