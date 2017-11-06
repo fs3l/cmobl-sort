@@ -132,7 +132,7 @@ void coda_txbegin();
 
 __attribute__((always_inline)) inline void coda_txend()
 {
-  __asm__("xend\n\t");
+  //__asm__("xend\n\t");
      //     "mov %%rsp, %0\n\t"
      //     "mov %%rbp, %1\n\t"
     //     // "mov %%rbp,%%rsp\n\t"

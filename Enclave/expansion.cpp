@@ -1,23 +1,28 @@
 #include "./Enclave_t.h"
 #include "./Enclave.h"
+#include "./RealLibCoda.h"
 #include <math.h>
 int record[6] = {100,4,101,1,102,2};
 int counter[3] = {0,0,0};
-int output[100];
+int output[20];
 int op = 0;
+HANDLE iterRecord;
+HANDLE iterOutput;
+HANDLE arrayCounter;
 void write_output(int r, int count) {
   for (int i=0;i<count;i++) {
-    output[op] = r;
-    op++;
+    ob_rw_write_next(iterOutput,r);
   }
 }
 
 int findMin() {
   int min = 1000000;
   int res = -1;
+  int cur;
   for(int i=0;i<3;i++) {
-    if (counter[i] !=0 && counter[i] < min) {
-      min = counter[i];
+    cur = nob_read_at(arrayCounter,i);
+    if (cur !=0 && cur < min) {
+      min = cur;
       res = i;
     }
   }
@@ -27,32 +32,44 @@ int findMin() {
 void expand() {
   int sum_weight=0;
   float avg_weight;
-  int weight_current;
+  int current_weight;
+  int this_record;
+  int this_weight;
   for(int i=0;i<3;i++)
     sum_weight += record[i*2+1];
   avg_weight = sum_weight/3.0f;
+  
+  iterRecord = initialize_ob_iterator(record,6);
+  iterOutput = initialize_ob_rw_iterator(output,20);
+  arrayCounter = initialize_nob_array(counter,3);
+  coda_txbegin();
   for(int i=0;i<3;i++) {
-    weight_current = (int)(roundf((avg_weight)*(i+1))) - (int)(roundf(avg_weight*i));
-    EPrintf("weight_current=%d\n",weight_current);
-    if (record[i*2+1] <= weight_current) {
-      write_output(record[i*2],record[i*2+1]);
-      weight_current = weight_current - record[i*2+1];
+    current_weight = (int)(roundf((avg_weight)*(i+1))) - (int)(roundf(avg_weight*i));
+    this_record = ob_read_next(iterRecord);
+    this_weight = ob_read_next(iterRecord);
+    if (this_weight <= current_weight) {
+      write_output(this_record,this_weight);
+      current_weight = current_weight - this_weight;
     } else {
-      counter[record[i*2]-100] = record[i*2+1];
+      nob_write_at(arrayCounter,this_record-100,this_weight);
     }
-    while (weight_current>0) {
+    while (current_weight>0) {
       int record_j = findMin();
-      if (counter[record_j-100]>weight_current) {
-        write_output(record_j,weight_current);
-        counter[record_j-100] = counter[record_j-100] - weight_current;
-        weight_current = 0;
+      int min_count;
+      min_count = nob_read_at(arrayCounter,record_j-100);
+      if (min_count>current_weight) {
+        write_output(record_j,current_weight);
+        min_count -= current_weight;
+        nob_write_at(arrayCounter,record_j-100,min_count);
+        current_weight = 0;
       } else {
-        write_output(record_j,counter[record_j-100]);
-        weight_current -= counter[record_j-100];
-        counter[record_j-100] = 0;
+        write_output(record_j,min_count);
+        current_weight -= min_count;
+        nob_write_at(arrayCounter,record_j-100,0);
       }
     }
   }
-  for(int i=0;i<op;i++)
-    EPrintf("output[%d]=%d\n",i,output[i]);
+  coda_txend();
+  for(int i=0;i<7;i++)
+    EPrintf("output[%d]=%d\n",i,ob_rw_read_next(iterOutput));
 }
