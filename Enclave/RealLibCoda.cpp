@@ -207,7 +207,7 @@ void coda_txbegin()
       //  "add    $4, %%rcx\n\t"
       //  "jmp    loop_ep1_%=\n\t"
       //  "endloop_ep1_%=:\n\t"
-            //"xbegin coda_abort_handler\n\t"
+            "xbegin coda_abort_handler\n\t"
     "mov $0, %%eax\n\t"
     "mov %%rdi, %%rcx\n\t"
     "loop_ip_%=:\n\t"
