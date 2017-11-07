@@ -1,24 +1,123 @@
 /*
  * Author: Ju Chen
  * 10/24/2017
-*/
+ */
 
+#include <sgx_trts.h>
 #include "./Enclave.h"
 #include "./Enclave_t.h"
 #include "./RealLibCoda.h"
 
-
+int32_t msortMem[2 * SqrtN * BLOWUPFACTOR];
+int32_t tmp_data[2 * SqrtN * BLOWUPFACTOR];
 int32_t g_interm[2 * BLOWUPFACTOR * N];
+void swap(int* a, int* b)
+{
+  int temp = *a;
+  *a = *b;
+  *b = temp;
+}
 
-int checkOFlow(int32_t* aPerm);
-void genRandom(int* permutation);
-int verify(int32_t* data, int32_t* perm, int32_t* output);
+void c_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
+{
+  // memsetup
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  while (i < stride && j < stride) {
+    if (src1[i] < src2[j]) {
+      dst[k] = src1[i];
+      dst[k + 1] = src1[i + 1];
+      i += 2;
+    } else {
+      dst[k] = src2[j];
+      dst[k + 1] = src2[j + 1];
+      j += 2;
+    }
+    k += 2;
+  }
+  while (i < stride) {
+    dst[k] = src1[i];
+    dst[k + 1] = src1[i + 1];
+    i += 2;
+    k += 2;
+  }
+  while (j < stride) {
+    dst[k] = src2[j];
+    dst[k + 1] = src2[j + 1];
+    j += 2;
+    k += 2;
+  }
+}
 
-int compare(const void* a, const void* b); 
+void matrix_prepare(int32_t* data, int32_t data_init, int32_t data_size,
+                    int32_t** txmem_p, int32_t* size_p)
+{
+  for (int i = 0; i < 2 * SqrtN * BLOWUPFACTOR; i++)
+    msortMem[i] = data[i / (2 * BLOWUPFACTOR) * 2 * BLOWUPFACTOR * SqrtN +
+                       i % (2 * BLOWUPFACTOR) + data_init * 2 * BLOWUPFACTOR];
+  *txmem_p = msortMem;
+  *size_p = 2 * SqrtN * BLOWUPFACTOR;
+}
+
+
+int checkOFlow(int32_t* aPerm) {
+  int count[SqrtN];
+  int bucket;
+  int max = 0;
+  for (int i = 0; i < SqrtN; i++) {
+    memset(count, 0, sizeof(int32_t) * SqrtN);
+    for (int j = 0; j < SqrtN; j++) {
+      bucket = aPerm[i * SqrtN + j] / SqrtN;
+      if (count[bucket] == BLOWUPFACTOR) return 1;
+      count[bucket]++;
+    }
+  }
+  return 0;
+}
+void genRandom(int* permutation) {
+  unsigned int seed;
+  for (int i = 0; i < N; i++) permutation[i] = i;
+  for (int i = 0; i <= N - 2; i++) {
+    sgx_read_rand((unsigned char*)&seed, 4);
+    int j = seed % (N - i);
+    swap(&permutation[i], &permutation[i + j]);
+  }
+
+}
+int verify(int32_t* data, int32_t* perm, int32_t* output) {
+  for (int i = 0; i < N; i++)
+    if (output[perm[i]] != data[i]) return 1;
+  return 0;
+}
+
+int compare(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
 int32_t* apptxs_cleanup_bsort(int32_t* data, int32_t data_init,
     int32_t data_size);
+
 int32_t* apptxs_cleanup_msort(int32_t* data, int32_t data_init,
-    int32_t data_size);
+                              int32_t data_size)
+{
+  int32_t* txmem2 = 0;
+  int32_t txmem_size;
+  matrix_prepare(data, data_init, data_size, &txmem2, &txmem_size);
+  int32_t* input;
+  int32_t* output;
+  input = txmem2;
+  output = tmp_data;
+  int32_t* swap;
+  for (int stride = 2; stride < data_size; stride *= 2) {
+    for (int j = 0; j < data_size; j += 2 * stride) {
+    //  apptx_merge(output + j, input + j, input + j + stride, stride);
+     c_merge(output+j,input+j,input+j+stride,stride);
+    }
+    swap = input;
+    input = output;
+    output = swap;
+  }
+  return input;
+}
+
 void app_distribute_coda(HANDLE h1, HANDLE h2,HANDLE h3) {
   int32_t perm = 0;
   int32_t data = 0;
@@ -78,7 +177,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
   int M_dr[N];
   long sec_begin[1], sec_end[1], usec_begin[1], usec_end[1];
   ocall_gettimenow(sec_begin, usec_begin);
-  
+
   while (1) {
     genRandom(M_random);
     /* shuffle pass 1  PiR = shuffle(Pi,R);*/

@@ -11,7 +11,7 @@
 
 #include "./Enclave.h"
 #include "./RealLibCoda.h"
-#include "./sort.h"
+#include "./obli_merge_sort.h"
 #define C 4
 
 class Queue

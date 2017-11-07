@@ -9,13 +9,13 @@ int op = 0;
 HANDLE iterRecord;
 HANDLE iterOutput;
 HANDLE arrayCounter;
-void write_output(int r, int count) {
+__attribute__((always_inline)) void write_output(int r, int count) {
   for (int i=0;i<count;i++) {
     ob_rw_write_next(iterOutput,r);
   }
 }
 
-int findMin() {
+__attribute__ ((always_inline)) int findMin() {
   int min = 1000000;
   int res = -1;
   int cur;
