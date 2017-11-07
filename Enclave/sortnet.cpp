@@ -1,40 +1,40 @@
 #include "./Enclave.h"
 #include "./Enclave_t.h"
 void cas_v2m(int* a,int* b, int* c1,int* c2,int dir) {
-	if (dir)
-		__asm__(
-			"mov	(%0), %%eax\n\t"
-			"mov	(%1), %%ebx\n\t"
-			"mov	(%2), %%ecx\n\t"
-			"mov	(%3), %%edx\n\t"
-			"cmp	%%ecx, %%edx\n\t"
-			"jg    out1mg\n\t"
-			"mov	%%ebx, (%0)\n\t"
-			"mov	%%eax, (%1)\n\t"
-			"mov	%%edx, (%2)\n\t"
-			"mov	%%ecx, (%3)\n\t"
-			"out1mg:\n\t"
-			:
-			:"r" (a), "r" (b), "r" (c1), "r" (c2)
-			:"eax","ebx","ecx","edx"
-			);
-	else
-		__asm__(
-			"mov	(%0), %%eax\n\t"
-			"mov	(%1), %%ebx\n\t"
-			"mov	(%2), %%ecx\n\t"
-			"mov	(%3), %%edx\n\t"
-			"cmp	%%ecx, %%edx\n\t"
-			"jl    out1ml\n\t"
-			"mov	%%ebx, (%0)\n\t"
-			"mov	%%eax, (%1)\n\t"
-			"mov	%%edx, (%2)\n\t"
-			"mov	%%ecx, (%3)\n\t"
-			"out1ml:\n\t"
-			:
-			:"r" (a), "r" (b), "r" (c1), "r" (c2)
-			:"eax","ebx","ecx","edx"
-			);
+  if (dir)
+    __asm__(
+        "mov	(%0), %%eax\n\t"
+        "mov	(%1), %%ebx\n\t"
+        "mov	(%2), %%ecx\n\t"
+        "mov	(%3), %%edx\n\t"
+        "cmp	%%ecx, %%edx\n\t"
+        "jg    out1mg\n\t"
+        "mov	%%ebx, (%0)\n\t"
+        "mov	%%eax, (%1)\n\t"
+        "mov	%%edx, (%2)\n\t"
+        "mov	%%ecx, (%3)\n\t"
+        "out1mg:\n\t"
+        :
+        :"r" (a), "r" (b), "r" (c1), "r" (c2)
+        :"eax","ebx","ecx","edx"
+        );
+  else
+    __asm__(
+        "mov	(%0), %%eax\n\t"
+        "mov	(%1), %%ebx\n\t"
+        "mov	(%2), %%ecx\n\t"
+        "mov	(%3), %%edx\n\t"
+        "cmp	%%ecx, %%edx\n\t"
+        "jl    out1ml\n\t"
+        "mov	%%ebx, (%0)\n\t"
+        "mov	%%eax, (%1)\n\t"
+        "mov	%%edx, (%2)\n\t"
+        "mov	%%ecx, (%3)\n\t"
+        "out1ml:\n\t"
+        :
+        :"r" (a), "r" (b), "r" (c1), "r" (c2)
+        :"eax","ebx","ecx","edx"
+        );
 }
 
 static inline void bitonicSort(int n, int start, int* array, int* base) {
@@ -75,14 +75,14 @@ void bubble_sort(int n, int* array, int* base)
 void sortnet(long M_data_ref, long M_perm_ref) {
   int32_t* data = (int32_t*)M_data_ref;
   int32_t* perm = (int32_t*)M_perm_ref;
-//  for(int i=0;i<N;i++) 
-//    EPrintf("data[%d]=%d\n",i,data[i]);
-//  for(int i=0;i<N;i++) 
-//    EPrintf("perm[%d]=%d\n",i,perm[i]);
+  //  for(int i=0;i<N;i++) 
+  //    EPrintf("data[%d]=%d\n",i,data[i]);
+  //  for(int i=0;i<N;i++) 
+  //    EPrintf("perm[%d]=%d\n",i,perm[i]);
   merger(N,0,data,perm);
-//  bubble_sort(N,data,perm);
-//  for(int i=0;i<N;i++) 
-//    EPrintf("data[%d]=%d\n",i,data[i]);
-//  for(int i=0;i<N;i++) 
-//    EPrintf("perm[%d]=%d\n",i,perm[i]);
+  //  bubble_sort(N,data,perm);
+  //  for(int i=0;i<N;i++) 
+  //    EPrintf("data[%d]=%d\n",i,data[i]);
+  //  for(int i=0;i<N;i++) 
+  //    EPrintf("perm[%d]=%d\n",i,perm[i]);
 }

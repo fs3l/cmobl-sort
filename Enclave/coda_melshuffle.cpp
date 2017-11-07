@@ -6,17 +6,12 @@
 #include <sgx_trts.h>
 #include "./Enclave.h"
 #include "./Enclave_t.h"
+#include "./utility.h"
 #include "./RealLibCoda.h"
 
 int32_t msortMem[2 * SqrtN * BLOWUPFACTOR];
 int32_t tmp_data[2 * SqrtN * BLOWUPFACTOR];
 int32_t g_interm[2 * BLOWUPFACTOR * N];
-void swap(int* a, int* b)
-{
-  int temp = *a;
-  *a = *b;
-  *b = temp;
-}
 
 void c_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
 {
