@@ -1,5 +1,7 @@
+#include "./mergesort.h"
 #include "./Enclave.h"
 #include "./Enclave_t.h"
+
 int tmp[1024];
 void cpp_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
 {
