@@ -26,6 +26,10 @@ INDEX cal_nob(INDEX offset) {
   return (offset/640)*1024 + offset%640 + 80;
 }
 
+LENGTH max_ob_rw() {
+  return 48;
+}
+
 HANDLE initialize_ob_iterator(DATA* data, LENGTH len) {
   //first, allocate a handle for it
   theCoda.handle++;
