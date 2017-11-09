@@ -198,15 +198,11 @@ public:
     CacheShuffleMap nob_map(out_partitions, min(SPRAY_MAP_MAX_LEN, out_p_len));
 
     for (i = 0; i < in_partitions; ++i) {
-      int32_t* out_arr = new int32_t[out_partitions];
-      int32_t* out_perm = new int32_t[out_partitions];
       nob_map.init_nob();
       HANDLE in_arr_ob, in_perm_ob;
       init_read_ob(i * in_p_len,
                    min(in_p_len, max(len - (i - 1) * in_p_len, 0)), &in_arr_ob,
                    &in_perm_ob);
-      HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
-      HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
       coda_txbegin();
       for (j = 0; j < in_p_len; ++j) {
         in_idx = i * in_p_len + j;
@@ -218,7 +214,15 @@ public:
           if (p != -1) nob_map.add((p - begin_idx) / out_p_idx_len, v, p);
         }
       }
+      coda_txend();
+      nob_map.reset_nob();
 
+      nob_map.init_nob();
+      int32_t* out_arr = new int32_t[out_partitions];
+      int32_t* out_perm = new int32_t[out_partitions];
+      HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
+      HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
+      coda_txbegin();
       for (j = 0; j < out_partitions; ++j) {
         v = p = -1;
         if (!nob_map.empty(j)) {
@@ -388,7 +392,7 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 10;
+  int32_t len = 1000;
   int32_t* data = gen_arr(len);
   print_arr(data, len);
   int32_t* data_out = new int32_t[len];
