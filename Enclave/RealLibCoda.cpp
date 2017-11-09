@@ -1,6 +1,6 @@
 #include "./RealLibCoda.h"
 
-//coda is a singleton 
+//coda is a singleton
 struct RealCoda theCoda;
 unsigned long old_rsp;
 unsigned long old_rbp;
@@ -26,7 +26,7 @@ INDEX cal_nob(INDEX offset) {
   return (offset/640)*1024 + offset%640 + 80;
 }
 
-LENGTH max_ob_rw() {
+LENGTH max_ob_write() {
   return 48;
 }
 
@@ -160,7 +160,7 @@ DATA ob_rw_read_next(HANDLE h) {
 
 void coda_txbegin()
 {
-  //uint64_t ret = coda_stack_switch();  
+  //uint64_t ret = coda_stack_switch();
   __asm__(
       "mov %%rax,%0\n\t"
       "mov %%rbx,%1\n\t"

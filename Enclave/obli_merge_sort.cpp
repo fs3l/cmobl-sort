@@ -96,7 +96,7 @@ static __attribute__((always_inline)) inline void reset_tx(
     const int32_t lhs_len, const int32_t rhs_len, const int32_t lhs_out_idx,
     const int32_t rhs_out_idx, int32_t* arr_out, const int32_t len,
     const int32_t arr_out_idx, HANDLE* lhs_out_ob, HANDLE* rhs_out_ob,
-    HANDLE* arr_out_ob, int32_t* ob_write, int32_t* max_ob_write)
+    HANDLE* arr_out_ob, int32_t* ob_write, int32_t* max_write)
 {
   coda_txend();
   lhs_q->reset_nob();
@@ -113,7 +113,7 @@ static __attribute__((always_inline)) inline void reset_tx(
   lhs_q->init_nob();
   rhs_q->init_nob();
   *ob_write = 0;
-  *max_ob_write = 1;  // TODO: API to get max ob write number
+  *max_write = max_ob_write();
   coda_txbegin();
 }
 
@@ -146,7 +146,7 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
   int32_t lhs_val, rhs_val, out_val;
 
   int32_t ob_write = 0, lhs_out_idx = 0, rhs_out_idx = 0, arr_out_idx = 0;
-  int32_t max_ob_write = 1;  // TODO: API to get max ob write number
+  int32_t max_write = max_ob_write();
 
   coda_txbegin();
 
@@ -171,11 +171,11 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
     }
 
     for (j = 0; j < 2; ++j) {
-      if (ob_write >= max_ob_write) {
+      if (ob_write >= max_write) {
         reset_tx(&lhs_q, &rhs_q, lhs_out, rhs_out, lhs_len, rhs_len,
                  lhs_out_idx, rhs_out_idx, arr_out, len, arr_out_idx,
                  &lhs_out_ob, &rhs_out_ob, &arr_out_ob, &ob_write,
-                 &max_ob_write);
+                 &max_write);
       }
 
       if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) {
@@ -210,10 +210,10 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
 done:
 
   while (lhs_q.get_cur_len() > 0) {
-    if (ob_write >= max_ob_write) {
+    if (ob_write >= max_write) {
       reset_tx(&lhs_q, &rhs_q, lhs_out, rhs_out, lhs_len, rhs_len, lhs_out_idx,
                rhs_out_idx, arr_out, len, arr_out_idx, &lhs_out_ob, &rhs_out_ob,
-               &arr_out_ob, &ob_write, &max_ob_write);
+               &arr_out_ob, &ob_write, &max_write);
     }
     out_val = lhs_q.front();
     lhs_q.dequeue();
@@ -223,10 +223,10 @@ done:
   }
 
   while (rhs_q.get_cur_len() > 0) {
-    if (ob_write >= max_ob_write) {
+    if (ob_write >= max_write) {
       reset_tx(&lhs_q, &rhs_q, lhs_out, rhs_out, lhs_len, rhs_len, lhs_out_idx,
                rhs_out_idx, arr_out, len, arr_out_idx, &lhs_out_ob, &rhs_out_ob,
-               &arr_out_ob, &ob_write, &max_ob_write);
+               &arr_out_ob, &ob_write, &max_write);
     }
     out_val = rhs_q.front();
     rhs_q.dequeue();
