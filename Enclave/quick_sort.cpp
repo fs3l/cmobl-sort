@@ -2,54 +2,44 @@
 #include "./Enclave.h"
 #include "./utility.h"
 #include "./quick_sort.h"
-#include "./RealLibCoda.h"
-int partition(HANDLE aData,int begin, int end) {
+int stack[10000000];
+int partition(int arr[],int begin, int end) {
   int res = begin - 1;
-  int pivot = nob_read_at(aData,end);
+  int pivot = arr[end];
   int tmp = 0;
   for(int i=begin;i<=end-1;i++) {
-    int v = nob_read_at(aData,i);
-    if(v<pivot) {
+    if(arr[i]<pivot) {
         res++;
-        tmp = nob_read_at(aData,res);
-        nob_write_at(aData,res,nob_read_at(aData,i));
-        nob_write_at(aData,i,tmp);
+        swap(&arr[i],&arr[res]);
     }
   }
-  tmp = nob_read_at(aData,end);
-  nob_write_at(aData,end,nob_read_at(aData,res+1));
-  nob_write_at(aData,res+1,tmp);
+  swap(&arr[res+1],&arr[end]);
   return res+1;
 }
 
 void quick_sort(int arr[], int begin, int end) {
-  int stack[end-begin+1];
-  HANDLE aStack = initialize_nob_array(stack,end-begin+1);
-  HANDLE aData = initialize_nob_array(arr,end-begin+1);
   int top = -1;
-  coda_txbegin();
-  nob_write_at(aStack,++top,begin);
-  nob_write_at(aStack,++top,end);
+  int high_use = -1;
+  stack[++top] = begin;
+  stack[++top] = end;
   while (top>=0) {
-      end = nob_read_at(aStack,top--);
-      begin = nob_read_at(aStack,top--);
-      int p = partition(aData,begin,end);
+      end = stack[top--];
+      begin = stack[top--];
+      int p = partition(arr,begin,end);
       if (p-1 > begin) {
-        nob_write_at(aStack,++top,begin);
-        nob_write_at(aStack,++top,p-1);
+        stack[++top] = begin;
+        stack[++top] = p-1;
       }
       if (p+1 < end) {
-        nob_write_at(aStack,++top,p+1);
-        nob_write_at(aStack,++top,end);
+        stack[++top] = p+1;
+        stack[++top] = end;
       }
+      if (top>high_use)
+        high_use = top;
   }
-  coda_txend();
+  EPrintf("high_use=%d\n",high_use);
 }
 
-void quick_sort_test() {
-  int a[] = {9,8,7,6,5,4,3,2,1};
-  quick_sort(a,0,9);
-  for(int i=0;i<9;i++)
-    EPrintf("%d ",a[i]);
-  EPrintf("\n");
+void quick_sort_test(int* arr, int n) {
+  quick_sort(arr,0,n-1);
 }

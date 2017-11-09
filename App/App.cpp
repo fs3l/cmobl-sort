@@ -15,10 +15,10 @@
 #include "../Enclave/Enclave.h"
 #include "App.h"
 #include "Enclave_u.h"
-
 #define SIZE_MASK 0xfff
 #define WAYS_MASK 0xffc00000
 
+int compare(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
 void gettimenow(long sec[1], long usec[1])
 {
   struct timeval now;
@@ -40,7 +40,7 @@ void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx)
       "mov %%edx,%3\n\t"
       //  :"=r"(*ebx)// output equal to "movl  %%eax %1"
       : "=r"(*eax), "=r"(*ebx), "=r"(*ecx),
-        "=r"(*edx)                      // output equal to "movl  %%eax %1"
+      "=r"(*edx)                      // output equal to "movl  %%eax %1"
       : "r"(code), "r"(*ecx)            // input equal to "movl %1, %%eax"
       : "%eax", "%ebx", "%ecx", "%edx"  // clobbered register
       );
@@ -68,24 +68,24 @@ typedef struct _sgx_errlist_t {
 
 /* Error code returned by sgx_create_enclave */
 static sgx_errlist_t sgx_errlist[] = {
-    {SGX_ERROR_UNEXPECTED, "Unexpected error occurred.", NULL},
-    {SGX_ERROR_INVALID_PARAMETER, "Invalid parameter.", NULL},
-    {SGX_ERROR_OUT_OF_MEMORY, "Out of memory.", NULL},
-    {SGX_ERROR_ENCLAVE_LOST, "Power transition occurred.",
-     "Please refer to the sample \"PowerTransition\" for details."},
-    {SGX_ERROR_INVALID_ENCLAVE, "Invalid enclave image.", NULL},
-    {SGX_ERROR_INVALID_ENCLAVE_ID, "Invalid enclave identification.", NULL},
-    {SGX_ERROR_INVALID_SIGNATURE, "Invalid enclave signature.", NULL},
-    {SGX_ERROR_OUT_OF_EPC, "Out of EPC memory.", NULL},
-    {SGX_ERROR_NO_DEVICE, "Invalid SGX device.",
-     "Please make sure SGX module is enabled in the BIOS, and install SGX "
-     "driver afterwards."},
-    {SGX_ERROR_MEMORY_MAP_CONFLICT, "Memory map conflicted.", NULL},
-    {SGX_ERROR_INVALID_METADATA, "Invalid enclave metadata.", NULL},
-    {SGX_ERROR_DEVICE_BUSY, "SGX device was busy.", NULL},
-    {SGX_ERROR_INVALID_VERSION, "Enclave version was invalid.", NULL},
-    {SGX_ERROR_INVALID_ATTRIBUTE, "Enclave was not authorized.", NULL},
-    {SGX_ERROR_ENCLAVE_FILE_ACCESS, "Can't open enclave file.", NULL},
+  {SGX_ERROR_UNEXPECTED, "Unexpected error occurred.", NULL},
+  {SGX_ERROR_INVALID_PARAMETER, "Invalid parameter.", NULL},
+  {SGX_ERROR_OUT_OF_MEMORY, "Out of memory.", NULL},
+  {SGX_ERROR_ENCLAVE_LOST, "Power transition occurred.",
+    "Please refer to the sample \"PowerTransition\" for details."},
+  {SGX_ERROR_INVALID_ENCLAVE, "Invalid enclave image.", NULL},
+  {SGX_ERROR_INVALID_ENCLAVE_ID, "Invalid enclave identification.", NULL},
+  {SGX_ERROR_INVALID_SIGNATURE, "Invalid enclave signature.", NULL},
+  {SGX_ERROR_OUT_OF_EPC, "Out of EPC memory.", NULL},
+  {SGX_ERROR_NO_DEVICE, "Invalid SGX device.",
+    "Please make sure SGX module is enabled in the BIOS, and install SGX "
+      "driver afterwards."},
+  {SGX_ERROR_MEMORY_MAP_CONFLICT, "Memory map conflicted.", NULL},
+  {SGX_ERROR_INVALID_METADATA, "Invalid enclave metadata.", NULL},
+  {SGX_ERROR_DEVICE_BUSY, "SGX device was busy.", NULL},
+  {SGX_ERROR_INVALID_VERSION, "Enclave version was invalid.", NULL},
+  {SGX_ERROR_INVALID_ATTRIBUTE, "Enclave was not authorized.", NULL},
+  {SGX_ERROR_ENCLAVE_FILE_ACCESS, "Can't open enclave file.", NULL},
 };
 
 /* Check error conditions for loading enclave */
@@ -126,7 +126,7 @@ int initialize_enclave(void)
 
   if (home_dir != NULL &&
       (strlen(home_dir) + strlen("/") + sizeof(TOKEN_FILENAME) + 1) <=
-          MAX_PATH) {
+      MAX_PATH) {
     /* compose the token path */
     strncpy(token_path, home_dir, strlen(home_dir));
     strncat(token_path, "/", strlen("/"));
@@ -139,7 +139,7 @@ int initialize_enclave(void)
   FILE *fp = fopen(token_path, "rb");
   if (fp == NULL && (fp = fopen(token_path, "wb")) == NULL) {
     printf("Warning: Failed to create/open the launch token file \"%s\".\n",
-           token_path);
+        token_path);
   }
 
   if (fp != NULL) {
@@ -155,7 +155,7 @@ int initialize_enclave(void)
   /* Step 2: call sgx_create_enclave to initialize an enclave instance */
   /* Debug Support: set 2nd parameter to 1 */
   ret = sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, &token, &updated,
-                           &global_eid, NULL);
+      &global_eid, NULL);
   if (ret != SGX_SUCCESS) {
     print_error_message(ret);
     if (fp != NULL) fclose(fp);
@@ -193,8 +193,8 @@ void ocall_printf(const char *str, int ret[1])
 
 void ocall_abort(const char* message)
 {
-    fprintf(stderr, "abort %s\n", message);
-    abort();
+  fprintf(stderr, "abort %s\n", message);
+  abort();
 }
 
 void swap(int *a, int *b)
@@ -213,6 +213,15 @@ void permutation_generate(int *permutation, int n)
   }
 }
 
+void gen_random_list(int arr[], int arr1[],int n) {
+  //printf("n=%d\n");
+  for (int i=0;i<n;i++) { 
+    int r = rand()%n;
+    arr[i] = r;
+    arr1[i] = r;
+  }
+}
+
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
 {
@@ -225,7 +234,8 @@ int SGX_CDECL main(int argc, char *argv[])
   /* Utilize trusted libraries */
   int retval;
 
-  int32_t *M_data = new int32_t[N];
+  int32_t *M_data = new int32_t[SortN];
+  int32_t *M_data1 = new int32_t[SortN];
   int32_t *M_perm = new int32_t[N];
   int32_t *M_output = new int32_t[N];
   int32_t *M_sim_output = new int32_t[N];
@@ -238,24 +248,29 @@ int SGX_CDECL main(int argc, char *argv[])
   cl_size = ebx & SIZE_MASK;
   n_ways = (ebx & WAYS_MASK) >> 22;
   c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
-  for (int i = 0; i < N; i++) M_data[i] = i;
-  for (int i = 0; i < N; i++) M_perm[i] = i;
+  //for (int i = 0; i < N; i++) M_data[i] = i;
+  //for (int i = 0; i < N; i++) M_perm[i] = i;
   permutation_generate(M_perm, N);
+  gen_random_list(M_data,M_data1,SortN);
   struct timeval start, end;
   gettimeofday(&start, NULL);
   retval =
-      ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
+    ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
   gettimeofday(&end, NULL);
-  for(int i=0;i<N;i++)
-      M_sim_output[M_perm[i]] = M_data[i];
-  for(int i=0;i<N;i++) {
-      if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
+  // for(int i=0;i<N;i++)
+  //     M_sim_output[M_perm[i]] = M_data[i];
+  // for(int i=0;i<N;i++) {
+  //     if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
+  // }
+  qsort(M_data1,SortN,sizeof(int),compare);      
+  for(int i=0;i<SortN;i++) {
+    if (M_data[i]!=M_data1[i]) {printf("not right\n"); break;}
   }
   printf("final result right\n");
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
   printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec) -
-                   (start.tv_sec * 1000000 + start.tv_usec)));
+        (start.tv_sec * 1000000 + start.tv_usec)));
   //    printf("retval: %d\n", retval);
   // TODO this call is buggy, FIXME
   //    copy_D_M(M_output, j);

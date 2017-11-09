@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 
-void quick_sort_test();
+void quick_sort_test(int* data, int n);
 
 #ifdef __cplusplus
 }

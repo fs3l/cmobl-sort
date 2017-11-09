@@ -11,7 +11,9 @@
 #include "./coda_melshuffle.h"
 #include "./obli_merge_sort.h"
 #include "./expansion.h"
+#include "./quick_sort_tx.h"
 #include "./quick_sort.h"
+#include "./sortnet1.h"
 int real_coda_shuffle();
 
 /*
@@ -56,7 +58,8 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
   ocall_gettimenow(sec_begin, usec_begin);
   //  cache_shuffle_test();
    // merge_sort_test();
-  quick_sort_test();
+  quick_sort_test((int*)M_data_ref,SortN);
+  //  sortnet1_test((int * )M_data_ref,SortN);
   //  coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
   // real_coda_shuffle();
   //  res= msort(a,1024);
