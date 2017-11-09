@@ -12,6 +12,7 @@
 #include "./Enclave.h"
 #include "./RealLibCoda.h"
 #include "./obli_merge_sort.h"
+#include "./utility.h"
 #define C 4
 
 class Queue
@@ -203,7 +204,8 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
     }
   }
 
-  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) Eabort("unprocessed data");
+  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0)
+    Eabort("unprocessed data");
 
 done:
 
@@ -255,21 +257,14 @@ static int* random_arr(const int len)
   return out;
 }
 
-static void print_arr(const int* arr, const int len)
-{
-  int i;
-  for (i = 0; i < len; ++i) EPrintf("%d ", arr[i]);
-  EPrintf("\n");
-}
-
 void merge_sort_test()
 {
   int len = 10;
   int32_t* a = random_arr(len);
-// print_arr(a, len);
+  // print_arr(a, len);
   int32_t* b = new int32_t[len];
   merge_sort(a, b, len);
-// print_arr(b, len);
+  // print_arr(b, len);
   delete[] a;
   delete[] b;
 }

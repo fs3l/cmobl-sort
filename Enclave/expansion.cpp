@@ -9,13 +9,13 @@ int op = 0;
 HANDLE iterRecord;
 HANDLE iterOutput;
 HANDLE arrayCounter;
-__attribute__((always_inline)) void write_output(int r, int count) {
+__attribute__((always_inline)) inline void write_output(int r, int count) {
   for (int i=0;i<count;i++) {
     ob_rw_write_next(iterOutput,r);
   }
 }
 
-__attribute__ ((always_inline)) int findMin() {
+__attribute__ ((always_inline)) inline int findMin() {
   int min = 1000000;
   int res = -1;
   int cur;
@@ -38,7 +38,7 @@ void expand() {
   for(int i=0;i<3;i++)
     sum_weight += record[i*2+1];
   avg_weight = sum_weight/3.0f;
-  
+
   iterRecord = initialize_ob_iterator(record,6);
   iterOutput = initialize_ob_rw_iterator(output,20);
   arrayCounter = initialize_nob_array(counter,3);

@@ -14,7 +14,7 @@
 #include "./quick_sort_tx.h"
 #include "./quick_sort.h"
 #include "./sortnet1.h"
-int real_coda_shuffle();
+#include "./mergesort.h"
 
 /*
  * printf:
@@ -42,15 +42,11 @@ void Eabort(const char *fmt, ...)
   ocall_abort(buf);
 }
 
-int32_t* msort(int32_t* data, int32_t data_size);
-/* ecall_foo:
- *   Uses malloc/free to allocate/free trusted memory.
- */
 int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
     int c_size)
 {
   //  int* res;
-  //  int a[1024]; 
+  //  int a[1024];
   //  for (int i=0;i<1024;i++)
   //    a[i] = 1024-i;
   // melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size, N);
@@ -61,7 +57,6 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
   quick_sort_test((int*)M_data_ref,SortN);
   //  sortnet1_test((int * )M_data_ref,SortN);
   //  coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
-  // real_coda_shuffle();
   //  res= msort(a,1024);
   //  expand();
   ocall_gettimenow(sec_end, usec_end);

@@ -6,22 +6,13 @@
 #include "./Enclave.h"
 #include "./RealLibCoda.h"
 #include "./cache_shuffle.h"
+#include "./utility.h"
 
 //#define DEBUG_PRINTF(...)
 #define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
 #define EPSILON 0.5
 #define SPRAY_MAP_MAX_LEN 30  // > (1 + 1/EPSILON) ln(2e)
-
-static __attribute__((always_inline)) inline int32_t min(int32_t a, int32_t b)
-{
-  return a < b ? a : b;
-}
-
-static __attribute__((always_inline)) inline int32_t max(int32_t a, int32_t b)
-{
-  return a > b ? a : b;
-}
 
 class CacheShuffleMap
 {
@@ -200,7 +191,8 @@ public:
           new CacheShuffleData(out_p_len, result_i_begin_idx, result_i_end_idx);
       DEBUG_PRINTF("out[%d] idx=[%d, %d)\n", i, result[i]->begin_idx,
                    result[i]->end_idx);
-      if (result[i]->begin_idx >= result[i]->end_idx) Eabort("invalid partition");
+      if (result[i]->begin_idx >= result[i]->end_idx)
+        Eabort("invalid partition");
     }
 
     CacheShuffleMap nob_map(out_partitions, min(SPRAY_MAP_MAX_LEN, out_p_len));
@@ -210,8 +202,9 @@ public:
       int32_t* out_perm = new int32_t[out_partitions];
       nob_map.init_nob();
       HANDLE in_arr_ob, in_perm_ob;
-      init_read_ob(i * in_p_len, min(in_p_len, max(len - (i - 1) * in_p_len, 0)),
-                   &in_arr_ob, &in_perm_ob);
+      init_read_ob(i * in_p_len,
+                   min(in_p_len, max(len - (i - 1) * in_p_len, 0)), &in_arr_ob,
+                   &in_perm_ob);
       HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
       HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
       coda_txbegin();
@@ -376,12 +369,6 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   }
 
   delete[] temp;
-}
-
-static void print_arr(const int32_t* arr, int32_t len)
-{
-  for (int32_t i = 0; i < len; ++i) EPrintf("%d ", arr[i]);
-  EPrintf("\n");
 }
 
 static int32_t* gen_arr(int32_t len)

@@ -1,7 +1,7 @@
 #include "./BetterLibCoda.h"
 #include "./RealLibCoda.h"
 #include "./Enclave.h"
-int EPrintf(const char* fmt, ...);
+
 int real_coda_shuffle()
 {
   int32_t data[4] = {100, 200, 300, 400};
