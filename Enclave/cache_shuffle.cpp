@@ -52,7 +52,10 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size >= max_len) Eabort("map full");
+    if (cur_size >= max_len) {
+      coda_txend();
+      Eabort("map full");
+    }
     int32_t value_idx = 1 + size_idx + cur_size * 2;
     nob_write_at(nob, value_idx, value);
     nob_write_at(nob, value_idx + 1, perm);
@@ -66,7 +69,6 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size <= 0) Eabort("map empty");
     int32_t value_idx = 1 + size_idx + (cur_size - 1) * 2;
     *value = nob_read_at(nob, value_idx);
     *perm = nob_read_at(nob, value_idx + 1);
@@ -77,7 +79,6 @@ public:
     int32_t max_len = nob_read_at(nob, 1);
     int32_t size_idx = 2 + id * (max_len * 2 + 1);
     int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size <= 0) Eabort("map empty");
     nob_write_at(nob, size_idx, cur_size - 1);
   }
 
@@ -405,7 +406,7 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 1000;
+  int32_t len = 100000;
   int32_t* data = gen_arr(len);
   print_arr(data, len);
   int32_t* data_out = new int32_t[len];
