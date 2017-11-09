@@ -124,16 +124,20 @@ public:
     *arr_ob = initialize_ob_iterator(arr + ob_offset, ob_len);
     *perm_ob = initialize_ob_iterator(perm + ob_offset, ob_len);
   }
-  __attribute__((always_inline)) inline void init_rw_ob(HANDLE* arr_ob,
+  __attribute__((always_inline)) inline void init_rw_ob(int32_t ob_offset,
+                                                        int32_t ob_len,
+                                                        HANDLE* arr_ob,
                                                         HANDLE* perm_ob)
   {
-    *arr_ob = initialize_ob_rw_iterator(arr, len);
-    *perm_ob = initialize_ob_rw_iterator(perm, len);
+    *arr_ob = initialize_ob_rw_iterator(arr + ob_offset, ob_len);
+    *perm_ob = initialize_ob_rw_iterator(perm + ob_offset, ob_len);
   }
-  __attribute__((always_inline)) inline void reset_rw_ob(HANDLE* arr_ob,
+  __attribute__((always_inline)) inline void reset_rw_ob(int32_t ob_offset,
+                                                         int32_t ob_len,
+                                                         HANDLE* arr_ob,
                                                          HANDLE* perm_ob)
   {
-    for (int32_t i = 0; i < len; ++i) {
+    for (int32_t i = ob_offset; i < ob_offset + ob_len; ++i) {
       arr[i] = ob_rw_read_next(*arr_ob);
       perm[i] = ob_rw_read_next(*perm_ob);
     }
@@ -217,60 +221,69 @@ public:
       coda_txend();
       nob_map.reset_nob();
 
-      nob_map.init_nob();
-      int32_t* out_arr = new int32_t[out_partitions];
-      int32_t* out_perm = new int32_t[out_partitions];
-      HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, out_partitions);
-      HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, out_partitions);
-      coda_txbegin();
-      for (j = 0; j < out_partitions; ++j) {
-        v = p = -1;
-        if (!nob_map.empty(j)) {
-          nob_map.top(j, &v, &p);
-          nob_map.pop(j);
+      int32_t write_len = 0;
+      while (write_len < out_partitions) {
+        int32_t step = min(out_partitions - write_len, max_ob_write());
+        nob_map.init_nob();
+        int32_t* out_arr = new int32_t[step];
+        int32_t* out_perm = new int32_t[step];
+        HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, step);
+        HANDLE out_perm_ob = initialize_ob_rw_iterator(out_perm, step);
+        coda_txbegin();
+        for (j = write_len; j < step + write_len; ++j) {
+          v = p = -1;
+          if (!nob_map.empty(j)) {
+            nob_map.top(j, &v, &p);
+            nob_map.pop(j);
+          }
+          ob_rw_write_next(out_arr_ob, v);
+          ob_rw_write_next(out_perm_ob, p);
         }
-        // result[j]->arr[i] = v;
-        // result[j]->perm[i] = p;
-        ob_rw_write_next(out_arr_ob, v);
-        ob_rw_write_next(out_perm_ob, p);
-      }
-      coda_txend();
-      nob_map.reset_nob();
+        coda_txend();
+        nob_map.reset_nob();
 
-      for (j = 0; j < out_partitions; ++j) {
-        result[j]->arr[i] = ob_rw_read_next(out_arr_ob);
-        result[j]->perm[i] = ob_rw_read_next(out_perm_ob);
-      }
+        for (j = write_len; j < step + write_len; ++j) {
+          result[j]->arr[i] = ob_rw_read_next(out_arr_ob);
+          result[j]->perm[i] = ob_rw_read_next(out_perm_ob);
+        }
 
-      delete[] out_arr;
-      delete[] out_perm;
+        delete[] out_arr;
+        delete[] out_perm;
+        write_len += step;
+      }
     }
 
     for (i = 0; i < out_partitions; ++i) {
-      nob_map.init_nob();
-      HANDLE in_arr_ob, in_perm_ob, out_arr_ob, out_perm_ob;
-      result[i]->init_read_ob(0, out_p_len, &in_arr_ob, &in_perm_ob);
-      result[i]->init_rw_ob(&out_arr_ob, &out_perm_ob);
-      coda_txbegin();
-      for (j = 0; j < out_p_len; ++j) {
-        // v = result[i]->arr[j];
-        // p = result[i]->perm[j];
-        v = ob_read_next(in_arr_ob);
-        p = ob_read_next(in_perm_ob);
-        if (p == -1 && !nob_map.empty(i)) {
-          nob_map.top(i, &v, &p);
-          nob_map.pop(i);
+      int32_t write_len = 0;
+      while (write_len < out_p_len) {
+        int32_t step = min(out_p_len - write_len, max_ob_write());
+        nob_map.init_nob();
+        HANDLE in_arr_ob, in_perm_ob, out_arr_ob, out_perm_ob;
+        result[i]->init_read_ob(write_len, step, &in_arr_ob, &in_perm_ob);
+        result[i]->init_rw_ob(write_len, step, &out_arr_ob, &out_perm_ob);
+        coda_txbegin();
+        for (j = write_len; j < step + write_len; ++j) {
+          v = ob_read_next(in_arr_ob);
+          p = ob_read_next(in_perm_ob);
+          if (p == -1 && !nob_map.empty(i)) {
+            nob_map.top(i, &v, &p);
+            nob_map.pop(i);
+          }
+          ob_rw_write_next(out_arr_ob, v);
+          ob_rw_write_next(out_perm_ob, p);
         }
-        // result[i]->arr[j] = v;
-        // result[i]->perm[j] = p;
-        ob_rw_write_next(out_arr_ob, v);
-        ob_rw_write_next(out_perm_ob, p);
+        coda_txend();
+        nob_map.reset_nob();
+        result[i]->reset_rw_ob(write_len, step, &out_arr_ob, &out_perm_ob);
+        write_len += step;
       }
 
-      if (!nob_map.empty(i)) Eabort("map not empty");
+      bool nob_empty;
+      nob_map.init_nob();
+      coda_txbegin();
+      nob_empty = nob_map.empty(i);
       coda_txend();
-      nob_map.reset_nob();
-      result[i]->reset_rw_ob(&out_arr_ob, &out_perm_ob);
+      if (!nob_empty) Eabort("map not empty");
     }
 
     return result;
