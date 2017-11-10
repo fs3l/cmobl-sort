@@ -50,9 +50,8 @@ public:
             ? element_bytes
             : element_bytes - element_bytes % sizeof(int32_t) + sizeof(int32_t);
     const int32_t element_size = element_bytes / sizeof(int32_t);
-    const int32_t element_block_size =
+    const int32_t element_block_size = element_block_bytes / sizeof(int32_t);
 
-        element_block_bytes / sizeof(int32_t);
     if (capacity > max_uint16 || num_of_queue > max_uint16)
       Eabort("fail to init MultiQueue");
 
