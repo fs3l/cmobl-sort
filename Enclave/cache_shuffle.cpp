@@ -6,88 +6,20 @@
 #include "./Enclave.h"
 #include "./RealLibCoda.h"
 #include "./cache_shuffle.h"
+#include "./multiqueue.hpp"
 #include "./utility.h"
 
 //#define DEBUG_PRINTF(...)
 #define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
 #define EPSILON 0.5
-#define SPRAY_MAP_MAX_LEN 30  // > (1 + 1/EPSILON) ln(2e)
+#define QUEUE_CAP 1000
 
-class CacheShuffleMap
-{
-public:
-  CacheShuffleMap(int32_t num_of_map, int32_t max_len)
-  {
-    int32_t data_len = 2 + num_of_map * (max_len * 2 + 1);
-    data = new int32_t[data_len];
-    memset(data, 0, sizeof(int32_t) * data_len);
-    data[0] = num_of_map;
-    data[1] = max_len;
-  }
-  ~CacheShuffleMap() { delete[] data; }
-  __attribute__((always_inline)) inline void init_nob()
-  {
-    nob = initialize_nob_array(data, 2 + data[0] * (data[1] * 2 + 1));
-  }
-  __attribute__((always_inline)) inline void reset_nob()
-  {
-    for (int32_t i = 2; i < 2 + data[0] * (data[1] * 2 + 1); ++i)
-      data[i] = nob_read_at(nob, i);
-  }
-
-  __attribute__((always_inline)) inline bool empty(int32_t id) const
-  {
-    int32_t max_len = nob_read_at(nob, 1);
-    return nob_read_at(nob, 2 + id * (max_len * 2 + 1)) == 0;
-  }
-
-  __attribute__((always_inline)) inline void add(int32_t id, int32_t value,
-                                                 int32_t perm)
-  {
-    // int32_t cur_size = size(id);
-    // data[value_idx(id, cur_size)] = value;
-    // data[perm_idx(id, cur_size)] = perm;
-    // data[size_idx(id)] = cur_size + 1;
-    int32_t max_len = nob_read_at(nob, 1);
-    int32_t size_idx = 2 + id * (max_len * 2 + 1);
-    int32_t cur_size = nob_read_at(nob, size_idx);
-    if (cur_size >= max_len) {
-      coda_txend();
-      Eabort("map full");
-    }
-    int32_t value_idx = 1 + size_idx + cur_size * 2;
-    nob_write_at(nob, value_idx, value);
-    nob_write_at(nob, value_idx + 1, perm);
-    nob_write_at(nob, size_idx, cur_size + 1);
-  }
-  __attribute__((always_inline)) inline void top(int32_t id, int32_t* value,
-                                                 int32_t* perm) const
-  {
-    //*value = data[value_idx(id, cur_size - 1)];
-    //*perm = data[perm_idx(id, cur_size - 1)];
-    int32_t max_len = nob_read_at(nob, 1);
-    int32_t size_idx = 2 + id * (max_len * 2 + 1);
-    int32_t cur_size = nob_read_at(nob, size_idx);
-    int32_t value_idx = 1 + size_idx + (cur_size - 1) * 2;
-    *value = nob_read_at(nob, value_idx);
-    *perm = nob_read_at(nob, value_idx + 1);
-  }
-  __attribute__((always_inline)) inline void pop(int32_t id)
-  {
-    // data[size_idx(id)] = cur_size - 1;
-    int32_t max_len = nob_read_at(nob, 1);
-    int32_t size_idx = 2 + id * (max_len * 2 + 1);
-    int32_t cur_size = nob_read_at(nob, size_idx);
-    nob_write_at(nob, size_idx, cur_size - 1);
-  }
-
-private:
-  // data layout: [num_of_map] [max_len] [m_1] .... [m_n]
-  //    m layout: [cur_size] [value_1] [perm_1] ... [value_m] [perm_m]
-  int32_t* data;
-  HANDLE nob;
+struct cache_shuffle_element {
+  int32_t value;
+  int32_t perm;
 };
+typedef struct cache_shuffle_element cache_shuffle_element_t;
 
 class CacheShuffleData
 {
@@ -187,6 +119,7 @@ public:
                  out_p_len, out_p_idx_len);
 
     int32_t i, j, in_idx, v, p;
+    cache_shuffle_element_t e;
 
     for (i = 0; i < out_partitions; ++i) {
       int32_t result_i_begin_idx = out_p_idx_len * i + begin_idx;
@@ -200,10 +133,10 @@ public:
         Eabort("invalid partition");
     }
 
-    CacheShuffleMap nob_map(out_partitions, min(SPRAY_MAP_MAX_LEN, out_p_len));
+    MultiQueue<cache_shuffle_element_t> queues(QUEUE_CAP, out_partitions);
 
     for (i = 0; i < in_partitions; ++i) {
-      nob_map.init_nob();
+      queues.init_nob();
       HANDLE in_arr_ob, in_perm_ob;
       init_read_ob(i * in_p_len,
                    min(in_p_len, max(len - (i - 1) * in_p_len, 0)), &in_arr_ob,
@@ -216,16 +149,24 @@ public:
           // p = perm[in_idx];
           v = ob_read_next(in_arr_ob);
           p = ob_read_next(in_perm_ob);
-          if (p != -1) nob_map.add((p - begin_idx) / out_p_idx_len, v, p);
+          if (p != -1) {
+            if (queues.full()) {
+              coda_txend();
+              Eabort("queues full.");
+            }
+            e.value = v;
+            e.perm = p;
+            queues.push_back((p - begin_idx) / out_p_idx_len, e);
+          }
         }
       }
       coda_txend();
-      nob_map.reset_nob();
+      queues.reset_nob();
 
       int32_t write_len = 0;
       while (write_len < out_partitions) {
         int32_t step = min(out_partitions - write_len, max_ob_write());
-        nob_map.init_nob();
+        queues.init_nob();
         int32_t* out_arr = new int32_t[step];
         int32_t* out_perm = new int32_t[step];
         HANDLE out_arr_ob = initialize_ob_rw_iterator(out_arr, step);
@@ -233,15 +174,17 @@ public:
         coda_txbegin();
         for (j = write_len; j < step + write_len; ++j) {
           v = p = -1;
-          if (!nob_map.empty(j)) {
-            nob_map.top(j, &v, &p);
-            nob_map.pop(j);
+          if (!queues.empty(j)) {
+            queues.front(j, &e);
+            v = e.value;
+            p = e.perm;
+            queues.pop_front(j);
           }
           ob_rw_write_next(out_arr_ob, v);
           ob_rw_write_next(out_perm_ob, p);
         }
         coda_txend();
-        nob_map.reset_nob();
+        queues.reset_nob();
 
         for (j = write_len; j < step + write_len; ++j) {
           result[j]->arr[i] = ob_rw_read_next(out_arr_ob);
@@ -258,7 +201,7 @@ public:
       int32_t write_len = 0;
       while (write_len < out_p_len) {
         int32_t step = min(out_p_len - write_len, max_ob_write());
-        nob_map.init_nob();
+        queues.init_nob();
         HANDLE in_arr_ob, in_perm_ob, out_arr_ob, out_perm_ob;
         result[i]->init_read_ob(write_len, step, &in_arr_ob, &in_perm_ob);
         result[i]->init_rw_ob(write_len, step, &out_arr_ob, &out_perm_ob);
@@ -266,25 +209,27 @@ public:
         for (j = write_len; j < step + write_len; ++j) {
           v = ob_read_next(in_arr_ob);
           p = ob_read_next(in_perm_ob);
-          if (p == -1 && !nob_map.empty(i)) {
-            nob_map.top(i, &v, &p);
-            nob_map.pop(i);
+          if (p == -1 && !queues.empty(i)) {
+            queues.front(j, &e);
+            v = e.value;
+            p = e.perm;
+            queues.pop_front(i);
           }
           ob_rw_write_next(out_arr_ob, v);
           ob_rw_write_next(out_perm_ob, p);
         }
         coda_txend();
-        nob_map.reset_nob();
+        queues.reset_nob();
         result[i]->reset_rw_ob(write_len, step, &out_arr_ob, &out_perm_ob);
         write_len += step;
       }
 
       bool nob_empty;
-      nob_map.init_nob();
+      queues.init_nob();
       coda_txbegin();
-      nob_empty = nob_map.empty(i);
+      nob_empty = queues.empty(i);
       coda_txend();
-      if (!nob_empty) Eabort("map not empty");
+      if (!nob_empty) Eabort("queue %d not empty", i);
     }
 
     return result;
@@ -406,7 +351,7 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 100000;
+  int32_t len = 10;
   int32_t* data = gen_arr(len);
   print_arr(data, len);
   int32_t* data_out = new int32_t[len];
