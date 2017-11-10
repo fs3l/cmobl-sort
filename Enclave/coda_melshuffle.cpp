@@ -86,7 +86,6 @@ int verify(int32_t* data, int32_t* perm, int32_t* output) {
   return 0;
 }
 
-int compare(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
 int32_t* apptxs_cleanup_bsort(int32_t* data, int32_t data_init,
     int32_t data_size);
 

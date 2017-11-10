@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <sgx_ukey_exchange.h>
 #include <pwd.h>
 #include <unistd.h>
 #define MAX_PATH FILENAME_MAX
@@ -45,12 +45,22 @@ void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx)
       : "%eax", "%ebx", "%ecx", "%edx"  // clobbered register
       );
 }
-
-int ecall_shuffle_wrapper(long M_data, long M_perm, long M_output, int c_size)
+int ecall_entry_wrapper(uint8_t M_data[], int clength,long M_perm, long M_output, int c_size)
 {
   sgx_status_t ret = SGX_ERROR_UNEXPECTED;
   int retval;
-  ret = ecall_shuffle(global_eid, &retval, M_data, M_perm, M_output, c_size);
+  ret = ecall_entry(global_eid, &retval, M_data, clength, M_perm, M_output, c_size);
+
+  if (ret != SGX_SUCCESS) abort();
+
+  return retval;
+}
+
+int ecall_entry_nocpy_wrapper(long M_data, long M_perm, long M_output, int c_size)
+{
+  sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+  int retval;
+  ret = ecall_entry_nocpy(global_eid, &retval, M_data, M_perm, M_output, c_size);
 
   if (ret != SGX_SUCCESS) abort();
 
@@ -234,8 +244,8 @@ int SGX_CDECL main(int argc, char *argv[])
   /* Utilize trusted libraries */
   int retval;
 
-  int32_t *M_data = new int32_t[SortN];
-  int32_t *M_data1 = new int32_t[SortN];
+  int32_t *M_data = new int32_t[N];
+  //int32_t *M_data1 = new int32_t[SortN];
   int32_t *M_perm = new int32_t[N];
   int32_t *M_output = new int32_t[N];
   int32_t *M_sim_output = new int32_t[N];
@@ -248,25 +258,25 @@ int SGX_CDECL main(int argc, char *argv[])
   cl_size = ebx & SIZE_MASK;
   n_ways = (ebx & WAYS_MASK) >> 22;
   c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
-  //for (int i = 0; i < N; i++) M_data[i] = i;
-  //for (int i = 0; i < N; i++) M_perm[i] = i;
+  for (int i = 0; i < N; i++) M_data[i] = i;
+  for (int i = 0; i < N; i++) M_perm[i] = i;
   permutation_generate(M_perm, N);
-  gen_random_list(M_data,M_data1,SortN);
+  //gen_random_list(M_data,M_data1,SortN);
   struct timeval start, end;
   gettimeofday(&start, NULL);
-  retval =
-    ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
+  //int clength = SortN*sizeof(int32_t)+SGX_AESGCM_IV_SIZE + SGX_AESGCM_MAC_SIZE;
+ // uint8_t* ctext = new uint8_t[clength];
+  //ecall_encrypt(global_eid,(uint8_t*)M_data,SortN*sizeof(int32_t),ctext,clength);
+  //retval =
+  //  ecall_entry_wrapper(M_data, clength,(long)M_perm, (long)M_output, c_size);
+  retval = ecall_entry_nocpy_wrapper((long)M_data,(long)M_perm,(long)M_output,c_size);
   gettimeofday(&end, NULL);
   // for(int i=0;i<N;i++)
   //     M_sim_output[M_perm[i]] = M_data[i];
   // for(int i=0;i<N;i++) {
   //     if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
   // }
-  qsort(M_data1,SortN,sizeof(int),compare);      
-  for(int i=0;i<SortN;i++) {
-    if (M_data[i]!=M_data1[i]) {printf("not right\n"); break;}
-  }
-  printf("final result right\n");
+  //qsort(M_data1,SortN,sizeof(int),compare);      
   // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
   // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
   printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec) -

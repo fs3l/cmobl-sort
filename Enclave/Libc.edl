@@ -1,23 +1,31 @@
 /* Libc.edl - EDL sample for trusted C library. */
-
 enclave {
-    
-    from "sgx_tstdc.edl" import sgx_oc_cpuidex;
 
-    /* 
-     * A subset of the C99 standard is supported as well as SGX customized functions: 
-     *  sgx_cpuid, etc.
+  from "sgx_tstdc.edl" import sgx_oc_cpuidex;
+
+  /* 
+   * A subset of the C99 standard is supported as well as SGX customized functions: 
+   *  sgx_cpuid, etc.
+   */
+
+  trusted {
+    /*
+     * Utilize malloc/free in enclave.
      */
+    public int ecall_entry_nocpy(long M_data, long M_perm, long M_output, int c_size);
+    public int ecall_entry([in,size=clength] uint8_t *ctext, int clength,long M_perm, long M_output, int c_size);
 
-    trusted {
-        /*
-         * Utilize malloc/free in enclave.
-         */
-        public int ecall_shuffle(long M_data, long M_perm, long M_output, int c_size);
+    /*
+     * Utilize SGX version __cpuid() in enclave.
+     */
+    public void ecall_sgx_cpuid([in, out] int cpuinfo[4], int leaf);
 
-        /*
-         * Utilize SGX version __cpuid() in enclave.
-         */
-        public void ecall_sgx_cpuid([in, out] int cpuinfo[4], int leaf);
-    };
+    public void ecall_encrypt(
+        [user_check] uint8_t *plaintext, uint32_t length,
+        [user_check] uint8_t *ciphertext, uint32_t cipher_length);
+
+    public void ecall_decrypt(
+        [in, size=ciphertext_length] uint8_t *ciphertext, uint32_t ciphertext_length,
+        [out, size=plaintext_length] uint8_t *plaintext, uint32_t plaintext_length);
+  };
 };

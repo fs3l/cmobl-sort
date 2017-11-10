@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+int compare(const void* a, const void* b);
 void swap(int* a, int* b);
 void swap_by_dir(int* a, int* b, int dir);
 void print_arr(const int32_t* arr, int32_t len);

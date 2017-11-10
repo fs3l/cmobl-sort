@@ -79,8 +79,8 @@ void sortnet(long M_data_ref, long M_perm_ref) {
   //    EPrintf("data[%d]=%d\n",i,data[i]);
   //  for(int i=0;i<N;i++) 
   //    EPrintf("perm[%d]=%d\n",i,perm[i]);
-  merger(N,0,data,perm);
-  //  bubble_sort(N,data,perm);
+  //merger(N,0,data,perm);
+    bubble_sort(N,data,perm);
   //  for(int i=0;i<N;i++) 
   //    EPrintf("data[%d]=%d\n",i,data[i]);
   //  for(int i=0;i<N;i++) 

@@ -19,7 +19,6 @@ int partition(int arr[],int begin, int end) {
 
 void quick_sort(int arr[], int begin, int end) {
   int top = -1;
-  int high_use = -1;
   stack[++top] = begin;
   stack[++top] = end;
   while (top>=0) {
@@ -34,10 +33,7 @@ void quick_sort(int arr[], int begin, int end) {
         stack[++top] = p+1;
         stack[++top] = end;
       }
-      if (top>high_use)
-        high_use = top;
   }
-  EPrintf("high_use=%d\n",high_use);
 }
 
 void quick_sort_test(int* arr, int n) {
