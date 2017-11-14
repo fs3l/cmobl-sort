@@ -118,7 +118,7 @@ public:
     DEBUG_PRINTF("in_p_len=%d, out_p_len=%d, out_p_idx_len=%d\n", in_p_len,
                  out_p_len, out_p_idx_len);
 
-    int32_t i, j, in_idx, v, p;
+    int32_t i, j, v, p, read_ob_len;
     cache_shuffle_element_t e;
 
     for (i = 0; i < out_partitions; ++i) {
@@ -138,26 +138,20 @@ public:
     for (i = 0; i < in_partitions; ++i) {
       queues.init_nob();
       HANDLE in_arr_ob, in_perm_ob;
-      init_read_ob(i * in_p_len,
-                   min(in_p_len, max(len - (i - 1) * in_p_len, 0)), &in_arr_ob,
-                   &in_perm_ob);
+      read_ob_len = min(in_p_len, max(len - i * in_p_len, 0));
+      init_read_ob(i * in_p_len, read_ob_len, &in_arr_ob, &in_perm_ob);
       coda_txbegin();
-      for (j = 0; j < in_p_len; ++j) {
-        in_idx = i * in_p_len + j;
-        if (in_idx < len) {
-          // v = arr[in_idx];
-          // p = perm[in_idx];
-          v = ob_read_next(in_arr_ob);
-          p = ob_read_next(in_perm_ob);
-          if (p != -1) {
-            if (queues.full()) {
-              coda_txend();
-              Eabort("queues full.");
-            }
-            e.value = v;
-            e.perm = p;
-            queues.push_back((p - begin_idx) / out_p_idx_len, e);
+      for (j = 0; j < read_ob_len; ++j) {
+        v = ob_read_next(in_arr_ob);
+        p = ob_read_next(in_perm_ob);
+        if (p != -1) {
+          if (queues.full()) {
+            coda_txend();
+            Eabort("queues full.");
           }
+          e.value = v;
+          e.perm = p;
+          queues.push_back((p - begin_idx) / out_p_idx_len, e);
         }
       }
       coda_txend();
