@@ -88,7 +88,7 @@ public:
   }
 
   // return the size of the queue queue_id
-  __attribute__((always_inline)) inline int32_t size(int32_t queue_id) const
+  int32_t size(int32_t queue_id) const
   {
     int32_t addr = get_queue_begin_addr(queue_id);
     int32_t size = 0;
@@ -100,32 +100,29 @@ public:
   }
 
   // return true if the queue queue_id is empty
-  __attribute__((always_inline)) inline bool empty(int32_t queue_id) const
+  bool empty(int32_t queue_id) const
   {
     return get_queue_begin_addr(queue_id) == 0;
   }
 
   // return true if the entire MultiQueue is full, i.e., no more free block
-  __attribute__((always_inline)) inline bool full() const { return empty(-1); }
+  bool full() const { return empty(-1); }
   // return the first element in the queue queue_id
-  __attribute__((always_inline)) inline void front(int32_t queue_id,
-                                                   T *element) const
+  void front(int32_t queue_id, T *element) const
   {
     int32_t addr = get_queue_begin_addr(queue_id);
     read_element(addr + 1, element);
   }
 
   // return the last element in the queue queue_id
-  __attribute__((always_inline)) inline void back(int32_t queue_id,
-                                                  T *element) const
+  void back(int32_t queue_id, T *element) const
   {
     int32_t addr = get_queue_end_addr(queue_id);
     read_element(addr + 1, element);
   }
 
   // push an element in the front of the queue queue_id
-  __attribute__((always_inline)) inline void push_front(int32_t queue_id,
-                                                        T element)
+  void push_front(int32_t queue_id, T element)
   {
     int32_t addr = alloc_block();
     write_element(addr + 1, element);
@@ -141,8 +138,7 @@ public:
   }
 
   // push an element in the back of the queue queue_id
-  __attribute__((always_inline)) inline void push_back(int32_t queue_id,
-                                                       T element)
+  void push_back(int32_t queue_id, T element)
   {
     int32_t addr = alloc_block();
     write_element(addr + 1, element);
@@ -158,7 +154,7 @@ public:
   }
 
   // pop the element in the front of the queue queue_id
-  __attribute__((always_inline)) inline void pop_front(int32_t queue_id)
+  void pop_front(int32_t queue_id)
   {
     int32_t addr = get_queue_begin_addr(queue_id);
     int32_t next_addr = get_block_next_addr(addr);
@@ -172,7 +168,7 @@ public:
   }
 
   // pop the element in the back of the queue queue_id
-  __attribute__((always_inline)) inline void pop_back(int32_t queue_id)
+  void pop_back(int32_t queue_id)
   {
     int32_t addr = get_queue_end_addr(queue_id);
     int32_t prev_addr = get_block_prev_addr(addr);
@@ -186,60 +182,47 @@ public:
   }
 
 private:
-  __attribute__((always_inline)) inline int32_t get_queue_begin_addr(
-      int32_t queue_id) const
+  int32_t get_queue_begin_addr(int32_t queue_id) const
   {
     return read(3 + queue_id) >> 16;
   }
-  __attribute__((always_inline)) inline int32_t get_queue_end_addr(
-      int32_t queue_id) const
+  int32_t get_queue_end_addr(int32_t queue_id) const
   {
     return read(3 + queue_id) & 0xffff;
   }
-  __attribute__((always_inline)) inline void set_queue_addr(int32_t queue_id,
-                                                            int32_t begin_addr,
-                                                            int32_t end_addr)
+  void set_queue_addr(int32_t queue_id, int32_t begin_addr, int32_t end_addr)
   {
     write(3 + queue_id, (begin_addr << 16) | end_addr);
   }
-  __attribute__((always_inline)) inline void set_queue_begin_addr(
-      int32_t queue_id, int32_t begin_addr)
+  void set_queue_begin_addr(int32_t queue_id, int32_t begin_addr)
   {
     set_queue_addr(queue_id, begin_addr, get_queue_end_addr(queue_id));
   }
-  __attribute__((always_inline)) inline void set_queue_end_addr(
-      int32_t queue_id, int32_t end_addr)
+  void set_queue_end_addr(int32_t queue_id, int32_t end_addr)
   {
     set_queue_addr(queue_id, get_queue_begin_addr(queue_id), end_addr);
   }
-  __attribute__((always_inline)) inline int32_t get_block_prev_addr(
-      int32_t block_addr) const
+  int32_t get_block_prev_addr(int32_t block_addr) const
   {
     return read(block_addr) >> 16;
   }
-  __attribute__((always_inline)) inline int32_t get_block_next_addr(
-      int32_t block_addr) const
+  int32_t get_block_next_addr(int32_t block_addr) const
   {
     return read(block_addr) & 0xffff;
   }
-  __attribute__((always_inline)) inline void set_block_addr(int32_t block_addr,
-                                                            int32_t prev_addr,
-                                                            int32_t next_addr)
+  void set_block_addr(int32_t block_addr, int32_t prev_addr, int32_t next_addr)
   {
     write(block_addr, (prev_addr << 16) | next_addr);
   }
-  __attribute__((always_inline)) inline void set_block_prev_addr(
-      int32_t block_addr, int32_t prev_addr)
+  void set_block_prev_addr(int32_t block_addr, int32_t prev_addr)
   {
     set_block_addr(block_addr, prev_addr, get_block_next_addr(block_addr));
   }
-  __attribute__((always_inline)) inline void set_block_next_addr(
-      int32_t block_addr, int32_t next_addr)
+  void set_block_next_addr(int32_t block_addr, int32_t next_addr)
   {
     set_block_addr(block_addr, get_block_prev_addr(block_addr), next_addr);
   }
-  __attribute__((always_inline)) inline void read_element(int32_t addr,
-                                                          T *element) const
+  void read_element(int32_t addr, T *element) const
   {
     for (int32_t i = 0; i < sizeof(T) / sizeof(int32_t) /* element_size */;
          ++i) {
@@ -247,8 +230,7 @@ private:
           read(addr + i);
     }
   }
-  __attribute__((always_inline)) inline void write_element(int32_t addr,
-                                                           T element)
+  void write_element(int32_t addr, T element)
   {
     for (int32_t i = 0; i < sizeof(T) / sizeof(int32_t) /* element_size */;
          ++i) {
@@ -256,7 +238,7 @@ private:
             *(int32_t *)((unsigned char *)(&element) + i * sizeof(int32_t)));
     }
   }
-  __attribute__((always_inline)) inline int32_t alloc_block()
+  int32_t alloc_block()
   {
     int32_t free_addr = get_queue_begin_addr(-1);
     int32_t next_addr = get_block_next_addr(free_addr);
@@ -268,7 +250,7 @@ private:
     }
     return free_addr;
   }
-  __attribute__((always_inline)) inline void free_block(int32_t addr)
+  void free_block(int32_t addr)
   {
     int32_t begin_addr = get_queue_begin_addr(-1);
     if (begin_addr == 0) {  // was full
