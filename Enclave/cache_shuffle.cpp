@@ -130,9 +130,10 @@ public:
     MultiQueue<cache_shuffle_element_t> queues(QUEUE_CAP, out_partitions);
 
     for (i = 0; i < in_partitions; ++i) {
+      read_ob_len = min(in_p_len, max(len - i * in_p_len, 0));
+      if (read_ob_len <= 0) break;
       queues.init_nob();
       HANDLE in_arr_ob, in_perm_ob;
-      read_ob_len = min(in_p_len, max(len - i * in_p_len, 0));
       init_read_ob(i * in_p_len, read_ob_len, &in_arr_ob, &in_perm_ob);
       coda_txbegin();
       for (j = 0; j < read_ob_len; ++j) {
