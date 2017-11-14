@@ -49,26 +49,20 @@ public:
     delete[] arr;
     delete[] perm;
   }
-  __attribute__((always_inline)) inline void init_read_ob(int32_t ob_offset,
-                                                          int32_t ob_len,
-                                                          HANDLE* arr_ob,
-                                                          HANDLE* perm_ob)
+  void init_read_ob(int32_t ob_offset, int32_t ob_len, HANDLE* arr_ob,
+                    HANDLE* perm_ob)
   {
     *arr_ob = initialize_ob_iterator(arr + ob_offset, ob_len);
     *perm_ob = initialize_ob_iterator(perm + ob_offset, ob_len);
   }
-  __attribute__((always_inline)) inline void init_rw_ob(int32_t ob_offset,
-                                                        int32_t ob_len,
-                                                        HANDLE* arr_ob,
-                                                        HANDLE* perm_ob)
+  void init_rw_ob(int32_t ob_offset, int32_t ob_len, HANDLE* arr_ob,
+                  HANDLE* perm_ob)
   {
     *arr_ob = initialize_ob_rw_iterator(arr + ob_offset, ob_len);
     *perm_ob = initialize_ob_rw_iterator(perm + ob_offset, ob_len);
   }
-  __attribute__((always_inline)) inline void reset_rw_ob(int32_t ob_offset,
-                                                         int32_t ob_len,
-                                                         HANDLE* arr_ob,
-                                                         HANDLE* perm_ob)
+  void reset_rw_ob(int32_t ob_offset, int32_t ob_len, HANDLE* arr_ob,
+                   HANDLE* perm_ob)
   {
     for (int32_t i = ob_offset; i < ob_offset + ob_len; ++i) {
       arr[i] = ob_rw_read_next(*arr_ob);
@@ -85,7 +79,7 @@ public:
     DEBUG_PRINTF("\n");
   }
 
-  __attribute__((always_inline)) inline void random_shuffle()
+  void random_shuffle()
   {
     int32_t i, j, temp;
     for (i = 0; i < len - 1; ++i) {
@@ -101,8 +95,8 @@ public:
     }
   }
 
-  __attribute__((always_inline)) inline CacheShuffleData** spary(
-      const int32_t in_partitions, const int32_t out_partitions)
+  CacheShuffleData** spary(const int32_t in_partitions,
+                           const int32_t out_partitions)
   {
     const int32_t in_p_len = (int32_t)ceil((double)len / (double)in_partitions);
     const int32_t out_p_len =
@@ -229,20 +223,14 @@ public:
     return result;
   }
 
-  __attribute__((always_inline)) inline int32_t compute_spary_in_partitions(
-      int32_t s)
-  {
-    return min(s, len);
-  }
-  __attribute__((always_inline)) inline int32_t compute_spary_out_partitions(
-      int32_t Q)
+  int32_t compute_spary_in_partitions(int32_t s) { return min(s, len); }
+  int32_t compute_spary_out_partitions(int32_t Q)
   {
     Q = min(Q, len);
     Q = min(Q, ceil((double)len / ceil((double)len / Q)));
     return Q;
   }
-  __attribute__((always_inline)) inline int32_t compute_rspary_partitions(
-      int32_t S)
+  int32_t compute_rspary_partitions(int32_t S)
   {
     int32_t idx_len = end_idx - begin_idx;
     S = min(S, max(idx_len, 1));
