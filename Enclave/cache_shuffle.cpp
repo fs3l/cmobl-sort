@@ -12,7 +12,7 @@
 //#define DEBUG_PRINTF(...)
 #define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
-#define EPSILON 0.5
+#define EPSILON 2
 #define QUEUE_CAP 1000
 
 struct cache_shuffle_element {
@@ -224,14 +224,17 @@ public:
     return result;
   }
 
-  int32_t compute_spary_in_partitions(int32_t s) { return min(s, len); }
+  int32_t compute_spary_in_partitions(int32_t S)
+  {
+    return min(ceil((double)len / S), len);
+  }
   int32_t compute_spary_out_partitions(int32_t Q)
   {
     Q = min(Q, len);
     Q = min(Q, ceil((double)len / ceil((double)len / Q)));
     return Q;
   }
-  int32_t compute_rspary_partitions(int32_t S)
+  int32_t compute_rspary_out_partitions(int32_t S)
   {
     int32_t idx_len = end_idx - begin_idx;
     S = min(S, max(idx_len, 1));
@@ -259,7 +262,7 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   CacheShuffleData* data = new CacheShuffleData(len, 0, len, arr_in, perm_in);
   int32_t temp_len = data->compute_spary_out_partitions(Q);
   CacheShuffleData** temp =
-      data->spary(data->compute_spary_in_partitions(len / S), temp_len);
+      data->spary(data->compute_spary_in_partitions(S), temp_len);
   delete data;
 
   // rspary
@@ -268,21 +271,23 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   while (temp_len < len) {
     new_temp_len = 0;
     for (int32_t i = 0; i < temp_len; ++i) {
-      new_temp_len += temp[i]->compute_rspary_partitions(S);
+      new_temp_len += temp[i]->compute_rspary_out_partitions(S);
     }
 
     CacheShuffleData** new_temp = new CacheShuffleData*[new_temp_len];
 
     for (int32_t i = 0, j = 0; i < temp_len; ++i) {
-      int32_t rspary_partitions = temp[i]->compute_rspary_partitions(S);
-      if (rspary_partitions == 1) {
+      int32_t rspary_out_partitions = temp[i]->compute_rspary_out_partitions(S);
+      int32_t rspary_in_partitions =
+          temp[i]->compute_spary_in_partitions(rspary_out_partitions);
+      if (rspary_out_partitions == 1) {
         new_temp[j++] = temp[i];
       } else {
         temp[i]->random_shuffle();
         CacheShuffleData** temp2 =
-            temp[i]->spary(rspary_partitions, rspary_partitions);
+            temp[i]->spary(rspary_in_partitions, rspary_out_partitions);
         delete temp[i];
-        for (int32_t k = 0; k < rspary_partitions; ++k)
+        for (int32_t k = 0; k < rspary_out_partitions; ++k)
           new_temp[j++] = temp2[k];
         delete[] temp2;
       }
