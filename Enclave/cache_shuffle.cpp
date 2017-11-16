@@ -199,7 +199,7 @@ public:
           v = ob_read_next(in_arr_ob);
           p = ob_read_next(in_perm_ob);
           if (p == -1 && !queues.empty(i)) {
-            queues.front(j, &e);
+            queues.front(i, &e);
             v = e.value;
             p = e.perm;
             queues.pop_front(i);
