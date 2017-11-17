@@ -9,12 +9,12 @@
 #include "./Enclave_t.h" /* bar*/
 #include "./cache_shuffle.h"
 #include "./coda_melshuffle.h"
-#include "./obli_merge_sort.h"
 #include "./expansion.h"
-#include "./quick_sort_tx.h"
-#include "./quick_sort.h"
-#include "./sortnet1.h"
 #include "./mergesort.h"
+#include "./obli_merge_sort.h"
+#include "./quick_sort.h"
+#include "./quick_sort_tx.h"
+#include "./sortnet1.h"
 
 /*
  * printf:
@@ -43,7 +43,7 @@ void Eabort(const char *fmt, ...)
 }
 
 int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
-    int c_size)
+                  int c_size)
 {
   //  int* res;
   //  int a[1024];
@@ -52,15 +52,16 @@ int ecall_shuffle(long M_data_ref, long M_perm_ref, long M_output_ref,
   // melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size, N);
   long sec_begin[1], sec_end[1], usec_begin[1], usec_end[1];
   ocall_gettimenow(sec_begin, usec_begin);
-  //  cache_shuffle_test();
-   // merge_sort_test();
-  quick_sort_test((int*)M_data_ref,SortN);
+  cache_shuffle_test();
+  // merge_sort_test();
+  // quick_sort_test((int*)M_data_ref,SortN);
   //  sortnet1_test((int * )M_data_ref,SortN);
   //  coda_melshuffle(M_data_ref, M_perm_ref, M_output_ref, c_size,N);
   //  res= msort(a,1024);
   //  expand();
   ocall_gettimenow(sec_end, usec_end);
-  EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_begin[0]*1000000+usec_begin[0]));
+  EPrintf("time = %ld\n", (sec_end[0] * 1000000 + usec_end[0]) -
+                              (sec_begin[0] * 1000000 + usec_begin[0]));
   //  for (int i=0;i<64;i++)
   //  EPrintf("res[%d]=%d\n",i,res[i]);
 }
