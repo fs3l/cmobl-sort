@@ -121,8 +121,8 @@ public:
           min(out_p_idx_len * (i + 1) + begin_idx, end_idx);
       result[i] =
           new CacheShuffleData(out_p_len, result_i_begin_idx, result_i_end_idx);
-      DEBUG_PRINTF("out[%d] idx=[%d, %d)\n", i, result[i]->begin_idx,
-                   result[i]->end_idx);
+      // DEBUG_PRINTF("out[%d] idx=[%d, %d)\n", i, result[i]->begin_idx,
+      // result[i]->end_idx);
       if (result[i]->begin_idx >= result[i]->end_idx)
         Eabort("invalid partition");
     }
@@ -333,13 +333,14 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 10;
+  int32_t len = 1000000;
   int32_t* data = gen_arr(len);
-  print_arr(data, len);
+  // print_arr(data, len);
   int32_t* data_out = new int32_t[len];
 
   cache_shuffle(data, data, data_out, len);
-  print_arr(data_out, len);
+  // print_arr(data_out, len);
+  EPrintf("done\n");
 
   delete[] data;
   delete[] data_out;
