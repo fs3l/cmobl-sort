@@ -27,9 +27,11 @@ void print_arr(const int32_t* arr, int32_t len)
 void cmove_int32(bool cond, int32_t* src, int32_t* dest) {
   __asm__ (
       "mov %%rdi, %%rax\n\t"
-      "mov (%%rsi),%%rbx\n\t"
-      "cmove %%rbx,%%rcx\n\t"
-      "mov %%rcx,(%%rdx)\n\t"
+      "mov (%%rsi), %%rbx\n\t"
+      "mov (%%rdx), %%rcx\n\t"
+      "test %%rax, %%rax\n\t"
+      "cmovnz %%rbx, %%rcx\n\t"
+      "mov %%rcx, (%%rdx)\n\t"
       :::
   );
 }
