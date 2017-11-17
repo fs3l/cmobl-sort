@@ -17,4 +17,6 @@ __attribute__((always_inline)) inline int32_t max(int32_t a, int32_t b)
   return a > b ? a : b;
 }
 
+void cmove_int32(bool cond, int32_t* src, int32_t* dest);
+
 #endif
