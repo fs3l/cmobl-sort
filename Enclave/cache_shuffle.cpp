@@ -228,13 +228,7 @@ public:
   {
     return min(ceil((double)len / S), len);
   }
-  int32_t compute_spary_out_partitions(int32_t Q)
-  {
-    Q = min(Q, len);
-    Q = min(Q, ceil((double)len / ceil((double)len / Q)));
-    return Q;
-  }
-  int32_t compute_rspary_out_partitions(int32_t S)
+  int32_t compute_spary_out_partitions(int32_t S)
   {
     int32_t idx_len = end_idx - begin_idx;
     S = min(S, max(idx_len, 1));
@@ -271,13 +265,13 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   while (temp_len < len) {
     new_temp_len = 0;
     for (int32_t i = 0; i < temp_len; ++i) {
-      new_temp_len += temp[i]->compute_rspary_out_partitions(S);
+      new_temp_len += temp[i]->compute_spary_out_partitions(S);
     }
 
     CacheShuffleData** new_temp = new CacheShuffleData*[new_temp_len];
 
     for (int32_t i = 0, j = 0; i < temp_len; ++i) {
-      int32_t rspary_out_partitions = temp[i]->compute_rspary_out_partitions(S);
+      int32_t rspary_out_partitions = temp[i]->compute_spary_out_partitions(S);
       int32_t rspary_in_partitions =
           temp[i]->compute_spary_in_partitions(rspary_out_partitions);
       if (rspary_out_partitions == 1) {
