@@ -295,11 +295,13 @@ void cache_shuffle(const int32_t* arr_in, const int32_t* perm_in,
   if (temp_len != len) Eabort("invalid partition size");
 
   for (int32_t i = 0; i < temp_len; ++i) {
+    int32_t real_v;
     for (int32_t j = 0; j < temp[i]->len; ++j) {
       int32_t v = temp[i]->arr[j];
       int32_t p = temp[i]->perm[j];
-      cmove_int32(p != -1, &v, &arr_out[i]);
+      cmove_int32(p != -1, &v, &real_v);
     }
+    arr_out[i] = real_v;
     delete temp[i];
   }
 
