@@ -244,6 +244,6 @@ void coda_tx_abort(int code)
 {
   coda_aborts++;
   coda_aborts_cur_tx++;
-  if (coda_aborts_cur_tx > 500) Eabort("too many aborts!!");
+//  if (coda_aborts_cur_tx > 500) Eabort("too many aborts!!");
 }
 }

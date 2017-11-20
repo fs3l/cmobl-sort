@@ -11,13 +11,13 @@
 #include <sgx_urts.h>
 #include <sys/time.h>
 #include <time.h>
-
+#include <iostream>
 #include "../Enclave/Enclave.h"
 #include "App.h"
 #include "Enclave_u.h"
 #define SIZE_MASK 0xfff
 #define WAYS_MASK 0xffc00000
-
+using namespace std;
 int compare(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
 void gettimenow(long sec[1], long usec[1])
 {
@@ -44,17 +44,6 @@ void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx)
       : "r"(code), "r"(*ecx)            // input equal to "movl %1, %%eax"
       : "%eax", "%ebx", "%ecx", "%edx"  // clobbered register
       );
-}
-
-int ecall_shuffle_wrapper(long M_data, long M_perm, long M_output, int c_size)
-{
-  sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-  int retval;
-  ret = ecall_shuffle(global_eid, &retval, M_data, M_perm, M_output, c_size);
-
-  if (ret != SGX_SUCCESS) abort();
-
-  return retval;
 }
 
 /* Global EID shared by multiple threads */
@@ -213,12 +202,10 @@ void permutation_generate(int *permutation, int n)
   }
 }
 
-void gen_random_list(int arr[], int arr1[],int n) {
-  //printf("n=%d\n");
+void gen_random_list(int arr[], int n) {
   for (int i=0;i<n;i++) { 
     int r = rand()%n;
     arr[i] = r;
-    arr1[i] = r;
   }
 }
 
@@ -233,48 +220,36 @@ int SGX_CDECL main(int argc, char *argv[])
 
   /* Utilize trusted libraries */
   int retval;
-
-  int32_t *M_data = new int32_t[SortN];
-  int32_t *M_data1 = new int32_t[SortN];
-  int32_t *M_perm = new int32_t[N];
-  int32_t *M_output = new int32_t[N];
-  int32_t *M_sim_output = new int32_t[N];
-  int eax = 0, ebx = 0, ecx = 1, edx = 0, cl_size = 0, n_ways = 0;
-  int c_size = 0;
-  struct sched_param param;
-  param.sched_priority = 0;
-  sched_setscheduler(0, SCHED_FIFO, &param);
-  cpuinfo(0x04, &eax, &ebx, &ecx, &edx);
-  cl_size = ebx & SIZE_MASK;
-  n_ways = (ebx & WAYS_MASK) >> 22;
-  c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
-  //for (int i = 0; i < N; i++) M_data[i] = i;
-  //for (int i = 0; i < N; i++) M_perm[i] = i;
-  permutation_generate(M_perm, N);
-  gen_random_list(M_data,M_data1,SortN);
-  struct timeval start, end;
-  gettimeofday(&start, NULL);
-  retval =
-    ecall_shuffle_wrapper((long)M_data, (long)M_perm, (long)M_output, c_size);
-  gettimeofday(&end, NULL);
-  // for(int i=0;i<N;i++)
-  //     M_sim_output[M_perm[i]] = M_data[i];
-  // for(int i=0;i<N;i++) {
-  //     if (M_output[i]!=M_sim_output[i]) {printf("not right\n"); break;}
-  // }
-  qsort(M_data1,SortN,sizeof(int),compare);      
-  for(int i=0;i<SortN;i++) {
-    if (M_data[i]!=M_data1[i]) {printf("not right\n"); break;}
+  int choice;
+  cout << "Please select program you want to run:"<<endl;
+  cout << "1: Melbourne Shuffle" << endl;
+  cout << "2: Oblivious Merge Sort" << endl;
+  cout << "3: Cache Shuffle" << endl;
+  cin >> choice;
+  if (choice == 1) {
+    int32_t *M_data = new int32_t[N];
+    int32_t *M_perm = new int32_t[N];
+    int32_t *M_output = new int32_t[N];
+    int eax = 0, ebx = 0, ecx = 1, edx = 0, cl_size = 0, n_ways = 0;
+    int c_size = 0;
+    struct sched_param param;
+    param.sched_priority = 0;
+    sched_setscheduler(0, SCHED_FIFO, &param);
+    cpuinfo(0x04, &eax, &ebx, &ecx, &edx);
+    cl_size = ebx & SIZE_MASK;
+    n_ways = (ebx & WAYS_MASK) >> 22;
+    c_size = (cl_size + 1) * (n_ways + 1) * (ecx + 1);
+    for (int i = 0; i < N; i++) M_data[i] = i;
+    for (int i = 0; i < N; i++) M_perm[i] = i;
+    permutation_generate(M_perm, N);
+    gen_random_list(M_data,N);
+    retval =
+      ecall_shuffle(global_eid,&retval,(long)M_data, (long)M_perm, (long)M_output, c_size);
+  } else if (choice == 2) {
+    retval = ecall_obli_mergesort(global_eid,&retval);
+  } else if (choice == 3) {
+    retval = ecall_cache_shuffle(global_eid,&retval);
   }
-  printf("final result right\n");
-  // printf("eax=%x,ebx=%x,ecx=%x,edx=%x\n",eax,ebx,ecx,edx);
-  // printf("cl_size=%d,n_ways=%d,sets=%d\n",cl_size,n_ways,ecx);
-  printf("%ld\n", ((end.tv_sec * 1000000 + end.tv_usec) -
-        (start.tv_sec * 1000000 + start.tv_usec)));
-  //    printf("retval: %d\n", retval);
-  // TODO this call is buggy, FIXME
-  //    copy_D_M(M_output, j);
-
   /* Destroy the enclave */
   sgx_destroy_enclave(global_eid);
   printf("Info: SampleEnclave successfully returned.\n");

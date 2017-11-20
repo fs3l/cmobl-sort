@@ -14,6 +14,9 @@ enclave {
          * Utilize malloc/free in enclave.
          */
         public int ecall_shuffle(long M_data, long M_perm, long M_output, int c_size);
+        public int ecall_obli_mergesort();
+        public int ecall_cache_shuffle();
+        public int ecall_entry_singlearg(long M_data);
 
         /*
          * Utilize SGX version __cpuid() in enclave.

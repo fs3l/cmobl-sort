@@ -18,7 +18,7 @@ extern "C" {
 //#define CACHE_SIZE 32*1024
 //#define SqrtN (CACHE_SIZE/4)
 // TOREMOVE
-#define SqrtN 256
+#define SqrtN 128
 #define N SqrtN *SqrtN
 #define BLOWUPFACTOR 16
 

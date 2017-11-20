@@ -9,8 +9,8 @@
 #include "./multiqueue.hpp"
 #include "./utility.h"
 
-//#define DEBUG_PRINTF(...)
-#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
+#define DEBUG_PRINTF(...)
+//#define DEBUG_PRINTF(...) EPrintf(__VA_ARGS__)
 
 #define EPSILON 2
 #define QUEUE_CAP 1000
@@ -325,7 +325,7 @@ static int32_t* gen_arr(int32_t len)
 
 void cache_shuffle_test()
 {
-  int32_t len = 1000000;
+  int32_t len = 100;
   int32_t* data = gen_arr(len);
   // print_arr(data, len);
   int32_t* data_out = new int32_t[len];
