@@ -50,8 +50,6 @@ extern unsigned long old_rsp;
 extern unsigned long old_rbp;
 extern uint64_t coda_context[100];
 
-
-
 //__attribute__((always_inline)) inline void coda_txbegin()
 void coda_txbegin();
 /*{
@@ -133,7 +131,7 @@ void coda_txbegin();
 
 __attribute__((always_inline)) inline void coda_txend()
 {
-  __asm__("xend\n\t");
+  //__asm__("xend\n\t");
   //     "mov %%rsp, %0\n\t"
   //     "mov %%rbp, %1\n\t"
   //     // "mov %%rbp,%%rsp\n\t"

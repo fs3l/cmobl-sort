@@ -8,10 +8,16 @@
 #include "./Enclave_t.h"
 #include "./utility.h"
 #include "./RealLibCoda.h"
-
+#include "./multiqueue.hpp"
 int32_t msortMem[2 * SqrtN * BLOWUPFACTOR];
 int32_t tmp_data[2 * SqrtN * BLOWUPFACTOR];
 int32_t g_interm[2 * BLOWUPFACTOR * N];
+struct melshuffle_element {
+  int32_t value;
+  int32_t perm;
+};
+typedef struct melshuffle_element melshuffle_element_t;
+#define QUEUE_CAP 10000
 
 void c_merge(int32_t* dst, int32_t* src1, int32_t* src2, int stride)
 {
@@ -136,20 +142,53 @@ int coda_distribute(int32_t* M_data, int32_t M_data_init, int32_t M_data_size,
 {
   HANDLE dataIter = initialize_ob_iterator(&M_data[SqrtN*M_data_init],SqrtN);
   HANDLE permIter = initialize_ob_iterator(&M_perm[SqrtN*M_data_init],SqrtN);
-  DATA output[(2*BLOWUPFACTOR+1)*SqrtN];
+  DATA output[(2*BLOWUPFACTOR)*SqrtN];
   for(int i=0;i<SqrtN;i++) {
-    output[(2*BLOWUPFACTOR+1)*i] =0;
-    for (int j=1;j<2*BLOWUPFACTOR+1;j++)
-      output[(2*BLOWUPFACTOR+1)*i+j] = -1;
+    for (int j=0;j<2*BLOWUPFACTOR;j++)
+      output[(2*BLOWUPFACTOR)*i+j] = -1;
   }
-  HANDLE outputArray = initialize_nob_array(output,(2*BLOWUPFACTOR+1)*SqrtN);
-
+  int d,p;
+  melshuffle_element_t e;
+  MultiQueue<melshuffle_element_t> queues(QUEUE_CAP,SqrtN);  
+  queues.init_nob();
   coda_txbegin();
-  app_distribute_coda(dataIter,permIter,outputArray);
+  for(int i=0;i<SqrtN;i++) {
+    d = ob_read_next(dataIter);
+    p = ob_read_next(permIter);
+    //EPrintf("i=%d,p=%d\n",i,p);
+    melshuffle_element_t e;
+    e.value = d;
+    e.perm = p;
+    queues.push_back(p/SqrtN,e);
+  }
   coda_txend();
+  queues.reset_nob();
+  for(int i=0;i<SqrtN;i++) {
+    queues.init_nob();
+    HANDLE ob_out = initialize_ob_rw_iterator(output+i*(2*BLOWUPFACTOR),2*BLOWUPFACTOR);
+    coda_txbegin();
+    int count = 0;
+    while (!queues.empty(i)) {
+      queues.front(i,&e);
+      //EPrintf("pop out i=%d, e.value=%d,e.perm=%d\n",i,e.value,e.perm);
+      ob_rw_write_next(ob_out,e.perm);
+      ob_rw_write_next(ob_out,e.value);
+      queues.pop_front(i);
+      count++;
+    }
+    coda_txend();
+    queues.reset_nob();
+    int q=0;
+    for(int p=0;p<2*count;p++) {
+      (output+(i*2*BLOWUPFACTOR))[p] = ob_rw_read_next(ob_out);
+    }
+    for(int p=0;p<2*count;p++) {
+     // EPrintf("%d\n",(output+(i*2*BLOWUPFACTOR))[p]);
+    }
+  }
   for (int i = 0; i < SqrtN; i++)
     for (int j = 0; j < 2 * BLOWUPFACTOR; j++) {
-      int ret = nob_read_at(outputArray,i*(2*BLOWUPFACTOR+1)+j+1);
+      int ret = output[i*(2*BLOWUPFACTOR)+j];
       M_output[M_output_init * SqrtN * 2 * BLOWUPFACTOR + i * 2 * BLOWUPFACTOR +
         j] = ret;//nob_read_at(outputArray,i * (2 * BLOWUPFACTOR + 1) + j + 1);
     }
@@ -159,10 +198,10 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     int input_size)
 {
   // input validation and method selection
-  if (!(input_size == 2 * 2 || input_size == 4 * 4 || input_size == 8 * 8 ||
-        input_size == 16 * 16 || input_size == 32 * 32 ||
-        input_size == 64 * 64 || input_size == 128 * 128))
-    return 0;
+//  if (!(input_size == 2 * 2 || input_size == 4 * 4 || input_size == 8 * 8 ||
+//        input_size == 16 * 16 || input_size == 32 * 32 ||
+//        input_size == 64 * 64 || input_size == 128 * 128))
+//    return 0;
 
   int32_t* M_data = (int32_t*)M_data_ref;
   int32_t* M_perm = (int32_t*)M_perm_ref;
@@ -244,7 +283,7 @@ int coda_melshuffle(long M_data_ref, long M_perm_ref, long M_output_ref, int c_s
     }
     break;
   }
-  qsort(M_output, N, sizeof(int), compare);
+  //qsort(M_output, N, sizeof(int), compare);
   ocall_gettimenow(sec_end, usec_end);
   EPrintf("shuffle time = %ld\n",(sec_end[0]*1000000+usec_end[0]) - (sec_begin[0]*1000000+usec_begin[0]));
   return 0;
