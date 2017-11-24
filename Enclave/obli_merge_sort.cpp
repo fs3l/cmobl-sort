@@ -26,59 +26,49 @@ public:
     data[2] = 0;
   }
   ~Queue() { delete[] data; }
-  __attribute__((always_inline)) inline void init_nob()
-  {
-    nob = initialize_nob_array(data, data[0] + 3);
-  }
-  __attribute__((always_inline)) inline void reset_nob()
+  void init_nob() { nob = initialize_nob_array(data, data[0] + 3); }
+  void reset_nob()
   {
     for (int32_t i = 1; i < data[0] + 3; ++i) data[i] = nob_read_at(nob, i);
   }
 
-  __attribute__((always_inline)) inline int32_t get_max_len() const
-  {
-    return nob_read_at(nob, 0);
-  }
-  __attribute__((always_inline)) inline int32_t get_cur_len() const
-  {
-    return nob_read_at(nob, 1);
-  }
-  __attribute__((always_inline)) inline int32_t get_front_idx() const
-  {
-    return nob_read_at(nob, 2);
-  }
-  __attribute__((always_inline)) inline void set_cur_len(int32_t cur_len)
-  {
-    nob_write_at(nob, 1, cur_len);
-  }
-  __attribute__((always_inline)) inline void set_front_idx(int32_t front_idx)
-  {
-    nob_write_at(nob, 2, front_idx);
-  }
-
-  __attribute__((always_inline)) inline void enqueue(const int32_t val)
+  int32_t get_max_len() const { return nob_read_at(nob, 0); }
+  int32_t get_cur_len() const { return nob_read_at(nob, 1); }
+  int32_t get_front_idx() const { return nob_read_at(nob, 2); }
+  void set_cur_len(int32_t cur_len) { nob_write_at(nob, 1, cur_len); }
+  void set_front_idx(int32_t front_idx) { nob_write_at(nob, 2, front_idx); }
+  void enqueue(const int32_t val)
   {
     int32_t max_len = get_max_len();
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == max_len) Eabort("sort queue full");
+    if (cur_len == max_len) {
+      coda_txend();
+      Eabort("sort queue full");
+    }
     nob_write_at(nob, (front_idx + cur_len) % max_len + 3, val);
     ++cur_len;
     set_cur_len(cur_len);
   }
-  __attribute__((always_inline)) inline int32_t front() const
+  int32_t front() const
   {
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == 0) Eabort("sort queue empty");
+    if (cur_len == 0) {
+      coda_txend();
+      Eabort("sort queue empty");
+    }
     return nob_read_at(nob, front_idx + 3);
   }
-  __attribute__((always_inline)) inline void dequeue()
+  void dequeue()
   {
     int32_t max_len = get_max_len();
     int32_t cur_len = get_cur_len();
     int32_t front_idx = get_front_idx();
-    if (cur_len == 0) Eabort("sort queue empty");
+    if (cur_len == 0) {
+      coda_txend();
+      Eabort("sort queue empty");
+    }
     --cur_len;
     front_idx = (front_idx + 1) % max_len;
     set_cur_len(cur_len);
@@ -91,12 +81,13 @@ private:
   HANDLE nob;
 };
 
-static __attribute__((always_inline)) inline void reset_tx(
-    Queue* lhs_q, Queue* rhs_q, int32_t* lhs_out, int32_t* rhs_out,
-    const int32_t lhs_len, const int32_t rhs_len, const int32_t lhs_out_idx,
-    const int32_t rhs_out_idx, int32_t* arr_out, const int32_t len,
-    const int32_t arr_out_idx, HANDLE* lhs_out_ob, HANDLE* rhs_out_ob,
-    HANDLE* arr_out_ob, int32_t* ob_write, int32_t* max_write)
+static void reset_tx(Queue* lhs_q, Queue* rhs_q, int32_t* lhs_out,
+                     int32_t* rhs_out, const int32_t lhs_len,
+                     const int32_t rhs_len, const int32_t lhs_out_idx,
+                     const int32_t rhs_out_idx, int32_t* arr_out,
+                     const int32_t len, const int32_t arr_out_idx,
+                     HANDLE* lhs_out_ob, HANDLE* rhs_out_ob, HANDLE* arr_out_ob,
+                     int32_t* ob_write, int32_t* max_write)
 {
   coda_txend();
   lhs_q->reset_nob();
@@ -174,8 +165,7 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
       if (ob_write >= max_write) {
         reset_tx(&lhs_q, &rhs_q, lhs_out, rhs_out, lhs_len, rhs_len,
                  lhs_out_idx, rhs_out_idx, arr_out, len, arr_out_idx,
-                 &lhs_out_ob, &rhs_out_ob, &arr_out_ob, &ob_write,
-                 &max_write);
+                 &lhs_out_ob, &rhs_out_ob, &arr_out_ob, &ob_write, &max_write);
       }
 
       if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) {
@@ -198,14 +188,19 @@ void merge_sort(const int32_t* arr_in, int32_t* arr_out, const size_t len)
         arr_out_idx++;
         ob_write++;
       } else {
-        if (i < lhs_len || i < rhs_len) Eabort("queue empty");
+        if (i < lhs_len || i < rhs_len) {
+          coda_txend();
+          Eabort("queue empty");
+        }
         goto done;
       }
     }
   }
 
-  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0)
+  if (lhs_q.get_cur_len() > 0 && rhs_q.get_cur_len() > 0) {
+    coda_txend();
     Eabort("unprocessed data");
+  }
 
 done:
 
